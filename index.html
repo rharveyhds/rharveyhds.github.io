@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebKit 613 Aggressive Tests</title>
+    <title>Canvas Exploit Suite</title>
     <style>
         body {
             font-family: monospace;
-            background: #0a0a0a;
-            color: #f00;
+            background: #0a0a2a;
+            color: #00ff00;
             padding: 20px;
             margin: 0;
         }
@@ -17,61 +17,55 @@
             margin: 0 auto;
         }
         h1 {
-            color: #f00;
-            border-bottom: 3px solid #f00;
+            color: #00ffff;
+            border-bottom: 2px solid #00ffff;
             padding-bottom: 10px;
-            text-shadow: 0 0 10px #f00;
         }
-        .danger {
-            background: #300;
-            border: 3px solid #f00;
-            padding: 20px;
-            margin: 20px 0;
-            color: #ff0;
-            font-weight: bold;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { border-color: #f00; }
-            50% { border-color: #ff0; }
+        .warning {
+            background: #2a2a00;
+            border: 2px solid #ffff00;
+            padding: 15px;
+            margin: 15px 0;
+            color: #ffff00;
         }
         .test-section {
-            background: #1a0000;
-            border: 2px solid #600;
+            background: #1a1a3a;
+            border: 1px solid #00ff00;
             padding: 15px;
             margin: 15px 0;
             border-radius: 5px;
         }
         button {
-            background: #f00;
-            color: #fff;
-            border: 2px solid #fff;
-            padding: 12px 25px;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
             margin: 5px;
             cursor: pointer;
             font-family: monospace;
             font-weight: bold;
             border-radius: 3px;
-            transition: all 0.3s;
         }
         button:hover {
-            background: #ff0;
-            color: #000;
-            transform: scale(1.05);
+            background: #00ffff;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
         }
         .log {
             background: #000;
-            border: 2px solid #f00;
+            border: 1px solid #00ff00;
             padding: 10px;
             margin-top: 10px;
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         h3 {
-            color: #ff6666;
+            color: #00ffff;
             margin-top: 0;
         }
         .status {
@@ -80,118 +74,107 @@
             border-radius: 3px;
             margin-left: 10px;
             font-size: 0.85em;
-            font-weight: bold;
         }
         .status.running {
-            background: #660;
-            color: #ff0;
-            animation: blink 1s infinite;
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            background: #666600;
+            color: #ffff00;
         }
         .status.passed {
-            background: #060;
-            color: #0f0;
+            background: #006600;
+            color: #00ff00;
         }
-        .status.crashed {
-            background: #f00;
-            color: #fff;
+        .status.failed {
+            background: #660000;
+            color: #ff0000;
         }
-        .cve-tag {
-            background: #600;
-            color: #ff0;
-            padding: 2px 8px;
+        .progress {
+            background: #333;
+            height: 20px;
             border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar {
+            background: #00ff00;
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
             font-size: 0.8em;
-            margin-left: 5px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>⚠️ WebKit 613 AGGRESSIVE EXPLOIT TESTS ⚠️</h1>
+        <h1>Canvas & Graphics Vulnerability Tests</h1>
         
-        <div class="danger">
-            🚨 EXTREME WARNING 🚨<br>
-            These tests attempt to trigger real memory corruption vulnerabilities.<br>
-            EXPECT: Browser crashes, system freezes, potential data loss, or device reboot.<br>
-            Based on actual CVEs with documented exploits.<br>
-            DO NOT RUN on production systems. Security research only.
+        <div class="warning">
+            ⚠️ These tests explore canvas memory limits and graphics-related vulnerabilities.
+            Tests are designed to avoid hanging by using incremental limits.
         </div>
 
         <div class="test-section">
-            <h3>System Info</h3>
-            <div class="log" id="sysInfo"></div>
-        </div>
-
-        <div class="test-section">
-            <h3>Test 1: CVE-2022-22620 Pattern <span class="cve-tag">CRITICAL</span> <span class="status" id="status1"></span></h3>
-            <p>Use-after-free in WebKit - actively exploited in the wild. Attempts to trigger UAF through HTMLMediaElement.</p>
-            <button onclick="testCVE202222620()">Run Test</button>
+            <h3>Test 1: Canvas Size Limit Discovery <span class="status" id="status1"></span></h3>
+            <p>Binary search to find maximum canvas dimensions before failure</p>
+            <button onclick="testCanvasSizeLimit()" id="btn1">Run Test</button>
             <div class="log" id="log1"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 2: JIT Array Bounds Check Elimination <span class="cve-tag">HIGH</span> <span class="status" id="status2"></span></h3>
-            <p>Exploits DFG JIT compiler's incorrect bounds check elimination for out-of-bounds access.</p>
-            <button onclick="testJITBoundsElimination()">Run Test</button>
+            <h3>Test 2: Canvas Count Limit Discovery <span class="status" id="status2"></span></h3>
+            <p>Find how many canvases can be created before memory exhaustion</p>
+            <button onclick="testCanvasCountLimit()" id="btn2">Run Test</button>
+            <div class="progress"><div class="progress-bar" id="progress2">0%</div></div>
             <div class="log" id="log2"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 3: Heap Spray + UAF Combo <span class="cve-tag">CRITICAL</span> <span class="status" id="status3"></span></h3>
-            <p>Heap spraying to control freed memory layout, combined with use-after-free trigger.</p>
-            <button onclick="testHeapSprayUAF()">Run Test</button>
+            <h3>Test 3: ImageData Race Condition <span class="status" id="status3"></span></h3>
+            <p>Tests race conditions in getImageData/putImageData operations</p>
+            <button onclick="testImageDataRace()" id="btn3">Run Test</button>
             <div class="log" id="log3"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 4: JSC Structure ID Confusion <span class="cve-tag">HIGH</span> <span class="status" id="status4"></span></h3>
-            <p>Attempts to confuse JavaScriptCore's structure IDs through rapid object transitions.</p>
-            <button onclick="testStructureConfusion()">Run Test</button>
+            <h3>Test 4: Canvas Context Corruption <span class="status" id="status4"></span></h3>
+            <p>Attempts to corrupt canvas context state through rapid operations</p>
+            <button onclick="testContextCorruption()" id="btn4">Run Test</button>
             <div class="log" id="log4"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 5: WebAssembly Memory Corruption <span class="cve-tag">HIGH</span> <span class="status" id="status5"></span></h3>
-            <p>Tests WebAssembly linear memory corruption and boundary checks.</p>
-            <button onclick="testWasmCorruption()">Run Test</button>
+            <h3>Test 5: toDataURL/toBlob Memory Leak <span class="status" id="status5"></span></h3>
+            <p>Tests for memory leaks in canvas export operations</p>
+            <button onclick="testCanvasExport()" id="btn5">Run Test</button>
             <div class="log" id="log5"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 6: AudioContext Race Condition <span class="cve-tag">MEDIUM</span> <span class="status" id="status6"></span></h3>
-            <p>Race condition in AudioContext leading to potential UAF (CVE-2021-30665 pattern).</p>
-            <button onclick="testAudioRace()">Run Test</button>
+            <h3>Test 6: Canvas Pattern/Gradient Overflow <span class="status" id="status6"></span></h3>
+            <p>Tests pattern and gradient creation for buffer overflows</p>
+            <button onclick="testPatternOverflow()" id="btn6">Run Test</button>
             <div class="log" id="log6"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 7: Aggressive JIT Side-Effect Modeling <span class="cve-tag">HIGH</span> <span class="status" id="status7"></span></h3>
-            <p>Exploits incorrect side-effect modeling in JIT compiler optimizations.</p>
-            <button onclick="testJITSideEffects()">Run Test</button>
+            <h3>Test 7: Canvas Transform Matrix Bugs <span class="status" id="status7"></span></h3>
+            <p>Tests transformation matrix edge cases and precision issues</p>
+            <button onclick="testTransformBugs()" id="btn7">Run Test</button>
             <div class="log" id="log7"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 8: Canvas Memory Exhaustion <span class="cve-tag">MEDIUM</span> <span class="status" id="status8"></span></h3>
-            <p>Attempts to exhaust graphics memory and trigger OOM crashes.</p>
-            <button onclick="testCanvasExhaustion()">Run Test</button>
+            <h3>Test 8: Cross-Canvas Memory Confusion <span class="status" id="status8"></span></h3>
+            <p>Tests for memory confusion between multiple canvas contexts</p>
+            <button onclick="testCrossCanvasConfusion()" id="btn8">Run Test</button>
             <div class="log" id="log8"></div>
-        </div>
-
-        <div class="test-section">
-            <button onclick="runAllAggressiveTests()" style="background: #f00; font-size: 1.3em; border: 3px solid #fff;">
-                💀 RUN ALL AGGRESSIVE TESTS 💀
-            </button>
         </div>
     </div>
 
     <script>
-        let testRunning = false;
-
         function log(testNum, message) {
             const logEl = document.getElementById('log' + testNum);
             const timestamp = new Date().toLocaleTimeString();
@@ -205,509 +188,509 @@
             statusEl.className = 'status ' + status.toLowerCase();
         }
 
-        function displaySysInfo() {
-            const info = `User Agent: ${navigator.userAgent}
-WebKit Version: ${navigator.userAgent.match(/AppleWebKit\/([\d.]+)/)?.[1] || 'Unknown'}
-Platform: ${navigator.platform}
-Memory: ${navigator.deviceMemory || 'Unknown'} GB
-Hardware Concurrency: ${navigator.hardwareConcurrency || 'Unknown'}
-Online: ${navigator.onLine}
-Language: ${navigator.language}`;
-            document.getElementById('sysInfo').textContent = info;
+        function disableButton(testNum) {
+            document.getElementById('btn' + testNum).disabled = true;
         }
 
-        // Test 1: CVE-2022-22620 Pattern - HTMLMediaElement UAF
-        function testCVE202222620() {
+        function enableButton(testNum) {
+            document.getElementById('btn' + testNum).disabled = false;
+        }
+
+        // Test 1: Canvas Size Limit Discovery
+        async function testCanvasSizeLimit() {
             setStatus(1, 'RUNNING');
-            log(1, 'CVE-2022-22620: Use-after-free in HTMLMediaElement');
-            log(1, 'Creating multiple audio/video elements...');
+            disableButton(1);
+            log(1, 'Starting canvas size limit discovery...');
             
             try {
-                const elements = [];
-                for (let i = 0; i < 100; i++) {
-                    const audio = document.createElement('audio');
-                    audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-                    document.body.appendChild(audio);
-                    elements.push(audio);
-                }
+                let low = 256;
+                let high = 16384;
+                let maxSize = 0;
                 
-                log(1, 'Elements created, starting rapid load/unload cycle...');
+                log(1, 'Binary searching for maximum canvas dimension...');
                 
-                for (let i = 0; i < elements.length; i++) {
-                    elements[i].load();
-                    elements[i].play().catch(() => {});
+                while (low <= high) {
+                    const mid = Math.floor((low + high) / 2);
+                    log(1, `Testing ${mid}x${mid} canvas...`);
                     
-                    setTimeout(() => {
-                        try {
-                            document.body.removeChild(elements[i]);
-                            elements[i].src = '';
-                        } catch(e) {}
-                    }, i * 10);
-                }
-                
-                log(1, 'Accessing potentially freed elements...');
-                setTimeout(() => {
-                    for (let el of elements) {
-                        try {
-                            el.play();
-                            el.pause();
-                            el.currentTime = 0;
-                        } catch(e) {
-                            log(1, `Exception during access: ${e.message}`);
-                        }
-                    }
-                    log(1, 'Test completed');
-                    setStatus(1, 'PASSED');
-                }, 2000);
-                
-            } catch (e) {
-                log(1, `CRASH/EXCEPTION: ${e.message}`);
-                log(1, `Stack: ${e.stack}`);
-                setStatus(1, 'CRASHED');
-            }
-        }
-
-        // Test 2: JIT Array Bounds Check Elimination
-        function testJITBoundsElimination() {
-            setStatus(2, 'RUNNING');
-            log(2, 'Testing JIT bounds check elimination...');
-            
-            try {
-                function oob_read(arr, idx) {
-                    return arr[idx];
-                }
-                
-                function oob_write(arr, idx, val) {
-                    arr[idx] = val;
-                }
-                
-                log(2, 'Training JIT with safe accesses...');
-                const train_arr = [1.1, 2.2, 3.3, 4.4, 5.5];
-                
-                for (let i = 0; i < 100000; i++) {
-                    oob_read(train_arr, i % 5);
-                    oob_write(train_arr, i % 5, 1.1);
-                }
-                
-                log(2, 'JIT should have eliminated bounds checks');
-                log(2, 'Attempting OOB read with negative index...');
-                
-                for (let i = -100; i < 100; i++) {
-                    const val = oob_read(train_arr, i);
-                    if (i % 10 === 0) {
-                        log(2, `arr[${i}] = ${val}`);
-                    }
-                }
-                
-                log(2, 'Attempting OOB write...');
-                for (let i = 5; i < 1000; i++) {
-                    oob_write(train_arr, i, 13.37);
-                }
-                
-                log(2, 'Attempting to read leaked data...');
-                const leaked = [];
-                for (let i = 5; i < 50; i++) {
-                    leaked.push(train_arr[i]);
-                }
-                log(2, `Potentially leaked values: ${leaked.slice(0, 10).join(', ')}`);
-                
-                log(2, 'Test completed');
-                setStatus(2, 'PASSED');
-            } catch (e) {
-                log(2, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(2, 'CRASHED');
-            }
-        }
-
-        // Test 3: Heap Spray + UAF
-        function testHeapSprayUAF() {
-            setStatus(3, 'RUNNING');
-            log(3, 'Heap spray + UAF combination attack...');
-            
-            try {
-                log(3, 'Phase 1: Heap spraying...');
-                const spray = [];
-                const spray_size = 1000;
-                const obj_template = {
-                    p0: 0x41414141,
-                    p1: 0x42424242,
-                    p2: 0x43434343,
-                    p3: 0x44444444,
-                    p4: new ArrayBuffer(0x100)
-                };
-                
-                for (let i = 0; i < spray_size; i++) {
-                    spray.push(Object.assign({}, obj_template));
-                }
-                
-                log(3, `Sprayed ${spray_size} objects into heap`);
-                log(3, 'Phase 2: Creating vulnerable object...');
-                
-                const vuln = {
-                    buffer: new ArrayBuffer(0x1000),
-                    view: null
-                };
-                vuln.view = new Uint32Array(vuln.buffer);
-                
-                log(3, 'Phase 3: Triggering UAF...');
-                const saved_view = vuln.view;
-                
-                vuln.buffer = null;
-                vuln.view = null;
-                
-                log(3, 'Buffer freed, attempting heap grooming...');
-                for (let i = 0; i < 100; i++) {
-                    spray.push(Object.assign({}, obj_template));
-                }
-                
-                log(3, 'Phase 4: Using dangling pointer...');
-                try {
-                    saved_view[0] = 0xdeadbeef;
-                    log(3, `Write succeeded: ${saved_view[0].toString(16)}`);
-                    
-                    for (let i = 0; i < 10; i++) {
-                        log(3, `saved_view[${i}] = 0x${saved_view[i].toString(16)}`);
-                    }
-                } catch (e) {
-                    log(3, `Access failed: ${e.message}`);
-                }
-                
-                log(3, 'Test completed');
-                setStatus(3, 'PASSED');
-            } catch (e) {
-                log(3, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(3, 'CRASHED');
-            }
-        }
-
-        // Test 4: JSC Structure ID Confusion
-        function testStructureConfusion() {
-            setStatus(4, 'RUNNING');
-            log(4, 'Testing JSC structure confusion...');
-            
-            try {
-                log(4, 'Creating objects with dynamic properties...');
-                
-                function make_obj() {
-                    return {a: 1, b: 2};
-                }
-                
-                const objects = [];
-                for (let i = 0; i < 1000; i++) {
-                    objects.push(make_obj());
-                }
-                
-                log(4, 'Rapidly changing object structures...');
-                for (let i = 0; i < objects.length; i++) {
-                    const obj = objects[i];
-                    obj['prop_' + i] = i;
-                    delete obj.a;
-                    obj.c = 3;
-                    delete obj.b;
-                    obj.d = 4;
-                }
-                
-                log(4, 'Creating structure transition chain...');
-                let morph = {x: 1};
-                for (let i = 0; i < 100; i++) {
-                    morph['p' + i] = i;
-                    if (i % 10 === 0) {
-                        delete morph['p' + (i - 5)];
-                    }
-                }
-                
-                log(4, 'Attempting to confuse structure cache...');
-                function access(obj) {
-                    return obj.a + obj.b;
-                }
-                
-                for (let i = 0; i < 10000; i++) {
-                    access(objects[i % objects.length]);
-                }
-                
-                log(4, 'Accessing with confused structure...');
-                const confused = make_obj();
-                confused.z = 999;
-                delete confused.a;
-                confused.a = {nested: 'object'};
-                
-                log(4, `Result: ${JSON.stringify(confused)}`);
-                log(4, 'Test completed');
-                setStatus(4, 'PASSED');
-            } catch (e) {
-                log(4, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(4, 'CRASHED');
-            }
-        }
-
-        // Test 5: WebAssembly Memory Corruption
-        function testWasmCorruption() {
-            setStatus(5, 'RUNNING');
-            log(5, 'Testing WebAssembly memory corruption...');
-            
-            try {
-                if (typeof WebAssembly === 'undefined') {
-                    log(5, 'WebAssembly not supported');
-                    setStatus(5, 'PASSED');
-                    return;
-                }
-                
-                log(5, 'Creating WASM module with linear memory...');
-                const wasmCode = new Uint8Array([
-                    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
-                    0x05, 0x03, 0x01, 0x00, 0x01,
-                    0x07, 0x0a, 0x01, 0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x02, 0x00
-                ]);
-                
-                const wasmModule = new WebAssembly.Module(wasmCode);
-                const wasmInstance = new WebAssembly.Instance(wasmModule);
-                
-                log(5, 'Accessing WASM memory...');
-                const memory = wasmInstance.exports.memory;
-                const view = new Uint8Array(memory.buffer);
-                
-                log(5, `Memory size: ${view.length} bytes`);
-                log(5, 'Attempting OOB write...');
-                
-                for (let i = 0; i < view.length + 1000; i++) {
                     try {
-                        view[i] = 0xAA;
+                        const canvas = document.createElement('canvas');
+                        canvas.width = mid;
+                        canvas.height = mid;
+                        const ctx = canvas.getContext('2d');
+                        
+                        if (!ctx) {
+                            log(1, `Failed to get context at ${mid}x${mid}`);
+                            high = mid - 1;
+                            continue;
+                        }
+                        
+                        // Try to actually use it
+                        ctx.fillStyle = 'red';
+                        ctx.fillRect(0, 0, 10, 10);
+                        
+                        maxSize = mid;
+                        log(1, `✓ ${mid}x${mid} succeeded`);
+                        low = mid + 1;
+                        
+                        // Small delay to prevent hanging
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
                     } catch (e) {
-                        log(5, `OOB caught at index ${i}: ${e.message}`);
+                        log(1, `✗ ${mid}x${mid} failed: ${e.message}`);
+                        high = mid - 1;
+                    }
+                }
+                
+                log(1, `Maximum canvas size found: ${maxSize}x${maxSize}`);
+                log(1, `Total pixels: ${maxSize * maxSize} (${(maxSize * maxSize * 4 / 1024 / 1024).toFixed(2)} MB)`);
+                setStatus(1, 'PASSED');
+                
+            } catch (e) {
+                log(1, `Exception: ${e.message}`);
+                setStatus(1, 'FAILED');
+            }
+            enableButton(1);
+        }
+
+        // Test 2: Canvas Count Limit Discovery
+        async function testCanvasCountLimit() {
+            setStatus(2, 'RUNNING');
+            disableButton(2);
+            log(2, 'Finding maximum canvas count...');
+            
+            try {
+                const canvases = [];
+                const canvasSize = 1024; // Use moderate size
+                let count = 0;
+                const maxAttempts = 500; // Prevent infinite loop
+                
+                log(2, `Creating ${canvasSize}x${canvasSize} canvases...`);
+                
+                for (let i = 0; i < maxAttempts; i++) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = canvasSize;
+                        canvas.height = canvasSize;
+                        const ctx = canvas.getContext('2d');
+                        
+                        if (!ctx) {
+                            log(2, `Failed to get context at canvas #${i}`);
+                            break;
+                        }
+                        
+                        // Fill with data to ensure memory allocation
+                        ctx.fillStyle = `rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255})`;
+                        ctx.fillRect(0, 0, canvasSize, canvasSize);
+                        
+                        canvases.push(canvas);
+                        count = i + 1;
+                        
+                        if (i % 10 === 0) {
+                            const progress = Math.min(100, (i / maxAttempts * 100));
+                            document.getElementById('progress2').style.width = progress + '%';
+                            document.getElementById('progress2').textContent = `${count} canvases`;
+                            log(2, `Created ${count} canvases (${(count * canvasSize * canvasSize * 4 / 1024 / 1024).toFixed(2)} MB)...`);
+                            
+                            // Yield to prevent hanging
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                        }
+                        
+                    } catch (e) {
+                        log(2, `Exception at canvas #${i}: ${e.message}`);
                         break;
                     }
                 }
                 
-                log(5, 'Growing memory and testing boundaries...');
-                memory.grow(10);
-                log(5, `New size: ${new Uint8Array(memory.buffer).length}`);
+                log(2, `Maximum canvases created: ${count}`);
+                log(2, `Total memory: ${(count * canvasSize * canvasSize * 4 / 1024 / 1024).toFixed(2)} MB`);
+                
+                // Cleanup
+                log(2, 'Cleaning up canvases...');
+                canvases.length = 0;
+                
+                setStatus(2, 'PASSED');
+                
+            } catch (e) {
+                log(2, `Exception: ${e.message}`);
+                setStatus(2, 'FAILED');
+            }
+            enableButton(2);
+        }
+
+        // Test 3: ImageData Race Condition
+        async function testImageDataRace() {
+            setStatus(3, 'RUNNING');
+            disableButton(3);
+            log(3, 'Testing ImageData race conditions...');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 512;
+                canvas.height = 512;
+                const ctx = canvas.getContext('2d');
+                
+                log(3, 'Creating initial image data...');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 512, 512);
+                
+                log(3, 'Starting rapid getImageData/putImageData cycle...');
+                
+                for (let i = 0; i < 100; i++) {
+                    const imageData1 = ctx.getImageData(0, 0, 512, 512);
+                    const imageData2 = ctx.getImageData(0, 0, 512, 512);
+                    
+                    // Modify while another operation is pending
+                    ctx.fillStyle = `rgb(${i % 255}, 0, 0)`;
+                    ctx.fillRect(0, 0, 512, 512);
+                    
+                    // Try to put old data back
+                    ctx.putImageData(imageData1, 0, 0);
+                    ctx.putImageData(imageData2, 0, 0);
+                    
+                    if (i % 10 === 0) {
+                        log(3, `Iteration ${i}/100...`);
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+                
+                log(3, 'Testing overlapping regions...');
+                for (let i = 0; i < 50; i++) {
+                    const data1 = ctx.getImageData(0, 0, 256, 256);
+                    const data2 = ctx.getImageData(128, 128, 256, 256);
+                    
+                    ctx.putImageData(data1, 128, 128);
+                    ctx.putImageData(data2, 0, 0);
+                }
+                
+                log(3, 'Test completed');
+                setStatus(3, 'PASSED');
+                
+            } catch (e) {
+                log(3, `Exception: ${e.message}`);
+                setStatus(3, 'FAILED');
+            }
+            enableButton(3);
+        }
+
+        // Test 4: Canvas Context Corruption
+        async function testContextCorruption() {
+            setStatus(4, 'RUNNING');
+            disableButton(4);
+            log(4, 'Testing context corruption...');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+                
+                log(4, 'Rapidly changing context state...');
+                
+                for (let i = 0; i < 1000; i++) {
+                    ctx.save();
+                    ctx.fillStyle = `rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255})`;
+                    ctx.strokeStyle = `rgb(${(i * 3) % 255}, ${i % 255}, ${(i * 2) % 255})`;
+                    ctx.lineWidth = (i % 50) + 1;
+                    ctx.globalAlpha = Math.random();
+                    ctx.globalCompositeOperation = ['source-over', 'multiply', 'screen', 'overlay'][i % 4];
+                    
+                    ctx.fillRect(Math.random() * 800, Math.random() * 600, 50, 50);
+                    ctx.restore();
+                    
+                    if (i % 100 === 0) {
+                        log(4, `${i}/1000 operations...`);
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+                
+                log(4, 'Testing excessive save/restore nesting...');
+                for (let i = 0; i < 10000; i++) {
+                    ctx.save();
+                }
+                log(4, 'Saved 10000 states');
+                
+                for (let i = 0; i < 10000; i++) {
+                    ctx.restore();
+                }
+                log(4, 'Restored 10000 states');
+                
+                log(4, 'Testing state corruption with invalid values...');
+                try {
+                    ctx.lineWidth = -1;
+                    ctx.lineWidth = Infinity;
+                    ctx.lineWidth = NaN;
+                    ctx.globalAlpha = -1;
+                    ctx.globalAlpha = 2;
+                    log(4, 'Invalid values handled');
+                } catch (e) {
+                    log(4, `Invalid value exception: ${e.message}`);
+                }
+                
+                log(4, 'Test completed');
+                setStatus(4, 'PASSED');
+                
+            } catch (e) {
+                log(4, `Exception: ${e.message}`);
+                setStatus(4, 'FAILED');
+            }
+            enableButton(4);
+        }
+
+        // Test 5: toDataURL/toBlob Memory Leak
+        async function testCanvasExport() {
+            setStatus(5, 'RUNNING');
+            disableButton(5);
+            log(5, 'Testing canvas export operations...');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1024;
+                canvas.height = 1024;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, 1024, 1024);
+                
+                log(5, 'Repeatedly calling toDataURL...');
+                const dataUrls = [];
+                
+                for (let i = 0; i < 50; i++) {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    dataUrls.push(dataUrl);
+                    
+                    if (i % 10 === 0) {
+                        log(5, `Generated ${i + 1} data URLs (${(dataUrl.length / 1024).toFixed(2)} KB each)...`);
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                
+                log(5, `Total memory in data URLs: ${(dataUrls.reduce((sum, url) => sum + url.length, 0) / 1024 / 1024).toFixed(2)} MB`);
+                
+                if (canvas.toBlob) {
+                    log(5, 'Testing toBlob...');
+                    const blobs = [];
+                    
+                    for (let i = 0; i < 20; i++) {
+                        await new Promise((resolve) => {
+                            canvas.toBlob((blob) => {
+                                blobs.push(blob);
+                                log(5, `Blob ${i + 1}: ${(blob.size / 1024).toFixed(2)} KB`);
+                                resolve();
+                            });
+                        });
+                    }
+                    
+                    log(5, `Created ${blobs.length} blobs`);
+                } else {
+                    log(5, 'toBlob not supported');
+                }
                 
                 log(5, 'Test completed');
                 setStatus(5, 'PASSED');
+                
             } catch (e) {
-                log(5, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(5, 'CRASHED');
+                log(5, `Exception: ${e.message}`);
+                setStatus(5, 'FAILED');
             }
+            enableButton(5);
         }
 
-        // Test 6: AudioContext Race Condition
-        function testAudioRace() {
+        // Test 6: Canvas Pattern/Gradient Overflow
+        async function testPatternOverflow() {
             setStatus(6, 'RUNNING');
-            log(6, 'Testing AudioContext race condition...');
+            disableButton(6);
+            log(6, 'Testing pattern and gradient operations...');
             
             try {
-                if (typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
-                    log(6, 'AudioContext not supported');
-                    setStatus(6, 'PASSED');
-                    return;
-                }
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
                 
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                log(6, 'Creating multiple AudioContexts...');
+                log(6, 'Creating many patterns...');
+                const patternCanvas = document.createElement('canvas');
+                patternCanvas.width = 100;
+                patternCanvas.height = 100;
+                const patternCtx = patternCanvas.getContext('2d');
+                patternCtx.fillStyle = 'red';
+                patternCtx.fillRect(0, 0, 100, 100);
                 
-                const contexts = [];
-                for (let i = 0; i < 20; i++) {
-                    contexts.push(new AudioCtx());
-                }
-                
-                log(6, 'Creating oscillators and rapidly connecting/disconnecting...');
-                
-                for (let ctx of contexts) {
-                    for (let i = 0; i < 10; i++) {
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        
-                        osc.start();
-                        
-                        setTimeout(() => {
-                            try {
-                                osc.stop();
-                                osc.disconnect();
-                                gain.disconnect();
-                            } catch(e) {}
-                        }, Math.random() * 100);
+                for (let i = 0; i < 1000; i++) {
+                    const pattern = ctx.createPattern(patternCanvas, 'repeat');
+                    ctx.fillStyle = pattern;
+                    ctx.fillRect(0, 0, 800, 600);
+                    
+                    if (i % 100 === 0) {
+                        log(6, `Created ${i + 1} patterns...`);
+                        await new Promise(resolve => setTimeout(resolve, 10));
                     }
                 }
                 
-                log(6, 'Closing contexts during active processing...');
-                setTimeout(() => {
-                    for (let ctx of contexts) {
-                        try {
-                            ctx.close();
-                        } catch(e) {
-                            log(6, `Close error: ${e.message}`);
-                        }
+                log(6, 'Testing complex gradients...');
+                for (let i = 0; i < 100; i++) {
+                    const gradient = ctx.createLinearGradient(0, 0, 800, 600);
+                    
+                    // Add many color stops
+                    for (let j = 0; j < 100; j++) {
+                        gradient.addColorStop(j / 100, `rgb(${j * 2}, ${j}, ${255 - j * 2})`);
                     }
-                    log(6, 'Test completed');
-                    setStatus(6, 'PASSED');
-                }, 500);
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, 800, 600);
+                    
+                    if (i % 10 === 0) {
+                        log(6, `Created gradient ${i + 1}...`);
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                }
+                
+                log(6, 'Testing radial gradients with extreme values...');
+                try {
+                    const rg1 = ctx.createRadialGradient(0, 0, 0, 0, 0, 1000000);
+                    const rg2 = ctx.createRadialGradient(-1000, -1000, 1, 2000, 2000, 10000);
+                    log(6, 'Extreme gradient values accepted');
+                } catch (e) {
+                    log(6, `Extreme values rejected: ${e.message}`);
+                }
+                
+                log(6, 'Test completed');
+                setStatus(6, 'PASSED');
                 
             } catch (e) {
-                log(6, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(6, 'CRASHED');
+                log(6, `Exception: ${e.message}`);
+                setStatus(6, 'FAILED');
             }
+            enableButton(6);
         }
 
-        // Test 7: Aggressive JIT Side-Effect Modeling
-        function testJITSideEffects() {
+        // Test 7: Canvas Transform Matrix Bugs
+        async function testTransformBugs() {
             setStatus(7, 'RUNNING');
-            log(7, 'Testing JIT side-effect modeling bugs...');
+            disableButton(7);
+            log(7, 'Testing transformation matrix edge cases...');
             
             try {
-                log(7, 'Creating getter with side effects...');
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
                 
-                let side_effect_triggered = false;
-                const obj = {};
-                Object.defineProperty(obj, 'prop', {
-                    get: function() {
-                        side_effect_triggered = true;
-                        this.other = 'modified';
-                        return 42;
-                    }
-                });
+                log(7, 'Testing extreme scale values...');
+                ctx.save();
+                ctx.scale(0.0000001, 0.0000001);
+                ctx.fillRect(0, 0, 100, 100);
+                ctx.restore();
                 
-                log(7, 'Training JIT to optimize away side effects...');
-                function test(o) {
-                    const x = o.prop;
-                    const y = o.prop;
-                    return x + y;
+                ctx.save();
+                ctx.scale(1000000, 1000000);
+                ctx.fillRect(0, 0, 100, 100);
+                ctx.restore();
+                
+                log(7, 'Testing extreme rotation...');
+                for (let i = 0; i < 1000; i++) {
+                    ctx.save();
+                    ctx.rotate(Math.PI * 2 * i);
+                    ctx.fillRect(0, 0, 10, 10);
+                    ctx.restore();
                 }
                 
-                for (let i = 0; i < 100000; i++) {
-                    test({prop: 1});
+                log(7, 'Testing singular matrix...');
+                try {
+                    ctx.setTransform(0, 0, 0, 0, 0, 0);
+                    ctx.fillRect(0, 0, 100, 100);
+                    log(7, 'Singular matrix accepted');
+                } catch (e) {
+                    log(7, `Singular matrix rejected: ${e.message}`);
                 }
                 
-                log(7, 'JIT should have optimized, testing with side-effect getter...');
-                side_effect_triggered = false;
-                const result = test(obj);
-                log(7, `Result: ${result}, Side effect triggered: ${side_effect_triggered}`);
-                
-                log(7, 'Testing array modification during iteration...');
-                function modify_during_iteration() {
-                    const arr = [1, 2, 3, 4, 5];
-                    let sum = 0;
-                    
-                    for (let i = 0; i < arr.length; i++) {
-                        sum += arr[i];
-                        if (i === 2) {
-                            arr.push(6, 7, 8);
-                        }
-                    }
-                    return sum;
-                }
-                
+                log(7, 'Testing transform accumulation...');
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
                 for (let i = 0; i < 10000; i++) {
-                    modify_during_iteration();
+                    ctx.translate(0.1, 0.1);
+                    ctx.scale(1.001, 1.001);
+                    ctx.rotate(0.001);
                 }
                 
-                log(7, 'Testing prototype chain modification...');
-                function proto_confusion() {
-                    const o = {x: 1};
-                    const val = o.y;
-                    Object.prototype.y = 2;
-                    return o.y;
-                }
-                
-                for (let i = 0; i < 10000; i++) {
-                    proto_confusion();
-                }
+                const transform = ctx.getTransform();
+                log(7, `Final transform: a=${transform.a.toFixed(4)}, d=${transform.d.toFixed(4)}`);
                 
                 log(7, 'Test completed');
                 setStatus(7, 'PASSED');
+                
             } catch (e) {
-                log(7, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(7, 'CRASHED');
+                log(7, `Exception: ${e.message}`);
+                setStatus(7, 'FAILED');
             }
+            enableButton(7);
         }
 
-        // Test 8: Canvas Memory Exhaustion
-        function testCanvasExhaustion() {
+        // Test 8: Cross-Canvas Memory Confusion
+        async function testCrossCanvasConfusion() {
             setStatus(8, 'RUNNING');
-            log(8, 'Attempting canvas memory exhaustion...');
+            disableButton(8);
+            log(8, 'Testing cross-canvas memory operations...');
             
             try {
-                log(8, 'Creating large canvases...');
+                log(8, 'Creating multiple canvases...');
                 const canvases = [];
+                const contexts = [];
                 
-                for (let i = 0; i < 100; i++) {
+                for (let i = 0; i < 10; i++) {
                     const canvas = document.createElement('canvas');
-                    canvas.width = 4096;
-                    canvas.height = 4096;
+                    canvas.width = 512;
+                    canvas.height = 512;
                     const ctx = canvas.getContext('2d');
-                    
-                    log(8, `Canvas ${i}: ${canvas.width}x${canvas.height}`);
-                    
-                    // Fill with image data
-                    const imageData = ctx.createImageData(canvas.width, canvas.height);
-                    for (let j = 0; j < imageData.data.length; j += 4) {
-                        imageData.data[j] = Math.random() * 255;
-                        imageData.data[j + 1] = Math.random() * 255;
-                        imageData.data[j + 2] = Math.random() * 255;
-                        imageData.data[j + 3] = 255;
-                    }
-                    ctx.putImageData(imageData, 0, 0);
-                    
+                    ctx.fillStyle = `rgb(${i * 25}, 0, 0)`;
+                    ctx.fillRect(0, 0, 512, 512);
                     canvases.push(canvas);
+                    contexts.push(ctx);
+                }
+                
+                log(8, 'Testing cross-canvas drawImage...');
+                for (let i = 0; i < contexts.length; i++) {
+                    for (let j = 0; j < canvases.length; j++) {
+                        if (i !== j) {
+                            contexts[i].drawImage(canvases[j], 0, 0);
+                        }
+                    }
                     
-                    if (i % 10 === 0) {
-                        log(8, `Created ${i + 1} canvases...`);
+                    if (i % 2 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 10));
                     }
                 }
                 
-                log(8, 'Attempting to read all canvas data simultaneously...');
-                for (let canvas of canvases) {
-                    try {
-                        canvas.toDataURL();
-                    } catch (e) {
-                        log(8, `toDataURL failed: ${e.message}`);
-                    }
+                log(8, 'Testing ImageData transfer between canvases...');
+                for (let i = 0; i < contexts.length - 1; i++) {
+                    const imageData = contexts[i].getImageData(0, 0, 512, 512);
+                    contexts[i + 1].putImageData(imageData, 0, 0);
+                }
+                
+                log(8, 'Testing pattern sharing...');
+                const patternSource = canvases[0];
+                for (let i = 1; i < contexts.length; i++) {
+                    const pattern = contexts[i].createPattern(patternSource, 'repeat');
+                    contexts[i].fillStyle = pattern;
+                    contexts[i].fillRect(0, 0, 512, 512);
+                }
+                
+                log(8, 'Modifying source canvas while pattern active...');
+                contexts[0].fillStyle = 'blue';
+                contexts[0].fillRect(0, 0, 512, 512);
+                
+                for (let i = 1; i < contexts.length; i++) {
+                    contexts[i].fillRect(0, 0, 512, 512);
                 }
                 
                 log(8, 'Test completed');
                 setStatus(8, 'PASSED');
+                
             } catch (e) {
-                log(8, `CRASH/EXCEPTION: ${e.message}`);
-                setStatus(8, 'CRASHED');
+                log(8, `Exception: ${e.message}`);
+                setStatus(8, 'FAILED');
             }
+            enableButton(8);
         }
-
-        // Run all tests with delays
-        async function runAllAggressiveTests() {
-            if (testRunning) {
-                alert('Tests already running!');
-                return;
-            }
-            
-            if (!confirm('WARNING: Running all tests may crash the browser. Continue?')) {
-                return;
-            }
-            
-            testRunning = true;
-            
-            const tests = [
-                testCVE202222620,
-                testJITBoundsElimination,
-                testHeapSprayUAF,
-                testStructureConfusion,
-                testWasmCorruption,
-                testAudioRace,
-                testJITSideEffects,
-                testCanvasExhaustion
-            ];
-            
-            for (let i = 0; i < tests.length; i++) {
-                tests[i]();
-                await new Promise(resolve => setTimeout(resolve, 3000));
-            }
-            
-            testRunning = false;
-        }
-
-        // Initialize
-        displaySysInfo();
     </script>
 </body>
 </html>
