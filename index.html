@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Exploit Suite</title>
+    <title>Resource Exhaustion Tests</title>
     <style>
         body {
             font-family: monospace;
-            background: #0a0a2a;
-            color: #00ff00;
+            background: #1a0a0a;
+            color: #ff9900;
             padding: 20px;
             margin: 0;
         }
@@ -17,27 +17,27 @@
             margin: 0 auto;
         }
         h1 {
-            color: #00ffff;
-            border-bottom: 2px solid #00ffff;
+            color: #ff6600;
+            border-bottom: 2px solid #ff6600;
             padding-bottom: 10px;
         }
         .warning {
-            background: #2a2a00;
-            border: 2px solid #ffff00;
+            background: #331100;
+            border: 2px solid #ff6600;
             padding: 15px;
             margin: 15px 0;
-            color: #ffff00;
+            color: #ffcc00;
         }
         .test-section {
-            background: #1a1a3a;
-            border: 1px solid #00ff00;
+            background: #2a1a1a;
+            border: 1px solid #ff9900;
             padding: 15px;
             margin: 15px 0;
             border-radius: 5px;
         }
         button {
-            background: #00ff00;
-            color: #000;
+            background: #ff6600;
+            color: #fff;
             border: none;
             padding: 10px 20px;
             margin: 5px;
@@ -47,7 +47,7 @@
             border-radius: 3px;
         }
         button:hover {
-            background: #00ffff;
+            background: #ff9900;
         }
         button:disabled {
             background: #666;
@@ -55,7 +55,7 @@
         }
         .log {
             background: #000;
-            border: 1px solid #00ff00;
+            border: 1px solid #ff9900;
             padding: 10px;
             margin-top: 10px;
             max-height: 300px;
@@ -65,7 +65,7 @@
             font-size: 0.85em;
         }
         h3 {
-            color: #00ffff;
+            color: #ffcc00;
             margin-top: 0;
         }
         .status {
@@ -76,8 +76,8 @@
             font-size: 0.85em;
         }
         .status.running {
-            background: #666600;
-            color: #ffff00;
+            background: #664400;
+            color: #ffcc00;
         }
         .status.passed {
             background: #006600;
@@ -87,90 +87,105 @@
             background: #660000;
             color: #ff0000;
         }
-        .progress {
-            background: #333;
-            height: 20px;
-            border-radius: 3px;
-            overflow: hidden;
+        .metric {
+            background: #222;
+            padding: 10px;
             margin: 10px 0;
+            border-left: 3px solid #ff6600;
         }
-        .progress-bar {
-            background: #00ff00;
-            height: 100%;
-            transition: width 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #000;
-            font-size: 0.8em;
+        .metric-value {
+            color: #ffcc00;
+            font-size: 1.2em;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Canvas & Graphics Vulnerability Tests</h1>
+        <h1>Resource Exhaustion & DoS Test Suite</h1>
         
         <div class="warning">
-            ⚠️ These tests explore canvas memory limits and graphics-related vulnerabilities.
-            Tests are designed to avoid hanging by using incremental limits.
+            ⚠️ These tests explore various resource exhaustion vectors.
+            Tests are incremental to avoid complete system hangs.
         </div>
 
         <div class="test-section">
-            <h3>Test 1: Canvas Size Limit Discovery <span class="status" id="status1"></span></h3>
-            <p>Binary search to find maximum canvas dimensions before failure</p>
-            <button onclick="testCanvasSizeLimit()" id="btn1">Run Test</button>
+            <h3>System Resources</h3>
+            <div class="metric">
+                <div>Memory: <span class="metric-value" id="memory">Unknown</span></div>
+                <div>Cores: <span class="metric-value" id="cores">Unknown</span></div>
+                <div>Connection: <span class="metric-value" id="connection">Unknown</span></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 1: DOM Node Exhaustion <span class="status" id="status1"></span></h3>
+            <p>Find maximum DOM nodes before slowdown/crash</p>
+            <button onclick="testDOMExhaustion()" id="btn1">Run Test</button>
             <div class="log" id="log1"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 2: Canvas Count Limit Discovery <span class="status" id="status2"></span></h3>
-            <p>Find how many canvases can be created before memory exhaustion</p>
-            <button onclick="testCanvasCountLimit()" id="btn2">Run Test</button>
-            <div class="progress"><div class="progress-bar" id="progress2">0%</div></div>
+            <h3>Test 2: Event Listener Leak <span class="status" id="status2"></span></h3>
+            <p>Tests memory leaks from excessive event listeners</p>
+            <button onclick="testEventListenerLeak()" id="btn2">Run Test</button>
             <div class="log" id="log2"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 3: ImageData Race Condition <span class="status" id="status3"></span></h3>
-            <p>Tests race conditions in getImageData/putImageData operations</p>
-            <button onclick="testImageDataRace()" id="btn3">Run Test</button>
+            <h3>Test 3: XHR/Fetch Connection Exhaustion <span class="status" id="status3"></span></h3>
+            <p>Tests maximum concurrent network connections</p>
+            <button onclick="testNetworkExhaustion()" id="btn3">Run Test</button>
             <div class="log" id="log3"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 4: Canvas Context Corruption <span class="status" id="status4"></span></h3>
-            <p>Attempts to corrupt canvas context state through rapid operations</p>
-            <button onclick="testContextCorruption()" id="btn4">Run Test</button>
+            <h3>Test 4: Timer/Interval Exhaustion <span class="status" id="status4"></span></h3>
+            <p>Tests limits on setTimeout/setInterval</p>
+            <button onclick="testTimerExhaustion()" id="btn4">Run Test</button>
             <div class="log" id="log4"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 5: toDataURL/toBlob Memory Leak <span class="status" id="status5"></span></h3>
-            <p>Tests for memory leaks in canvas export operations</p>
-            <button onclick="testCanvasExport()" id="btn5">Run Test</button>
+            <h3>Test 5: Nested iframe Resource Usage <span class="status" id="status5"></span></h3>
+            <p>Tests resource usage from nested iframes</p>
+            <button onclick="testIframeExhaustion()" id="btn5">Run Test</button>
             <div class="log" id="log5"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 6: Canvas Pattern/Gradient Overflow <span class="status" id="status6"></span></h3>
-            <p>Tests pattern and gradient creation for buffer overflows</p>
-            <button onclick="testPatternOverflow()" id="btn6">Run Test</button>
+            <h3>Test 6: Web Worker Exhaustion <span class="status" id="status6"></span></h3>
+            <p>Tests maximum number of Web Workers</p>
+            <button onclick="testWorkerExhaustion()" id="btn6">Run Test</button>
             <div class="log" id="log6"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 7: Canvas Transform Matrix Bugs <span class="status" id="status7"></span></h3>
-            <p>Tests transformation matrix edge cases and precision issues</p>
-            <button onclick="testTransformBugs()" id="btn7">Run Test</button>
+            <h3>Test 7: Video/Audio Element Exhaustion <span class="status" id="status7"></span></h3>
+            <p>Tests limits on media elements</p>
+            <button onclick="testMediaExhaustion()" id="btn7">Run Test</button>
             <div class="log" id="log7"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 8: Cross-Canvas Memory Confusion <span class="status" id="status8"></span></h3>
-            <p>Tests for memory confusion between multiple canvas contexts</p>
-            <button onclick="testCrossCanvasConfusion()" id="btn8">Run Test</button>
+            <h3>Test 8: CSS Style Exhaustion <span class="status" id="status8"></span></h3>
+            <p>Tests stylesheet and style rule limits</p>
+            <button onclick="testCSSExhaustion()" id="btn8">Run Test</button>
             <div class="log" id="log8"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 9: WebGL Context Exhaustion <span class="status" id="status9"></span></h3>
+            <p>Tests WebGL context creation limits</p>
+            <button onclick="testWebGLExhaustion()" id="btn9">Run Test</button>
+            <div class="log" id="log9"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 10: Large String Allocation <span class="status" id="status10"></span></h3>
+            <p>Tests JavaScript heap limits with large strings</p>
+            <button onclick="testStringExhaustion()" id="btn10">Run Test</button>
+            <div class="log" id="log10"></div>
         </div>
     </div>
 
@@ -196,54 +211,46 @@
             document.getElementById('btn' + testNum).disabled = false;
         }
 
-        // Test 1: Canvas Size Limit Discovery
-        async function testCanvasSizeLimit() {
+        // Display system info
+        function displaySystemInfo() {
+            document.getElementById('memory').textContent = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown';
+            document.getElementById('cores').textContent = navigator.hardwareConcurrency || 'Unknown';
+            document.getElementById('connection').textContent = navigator.connection ? navigator.connection.effectiveType : (navigator.onLine ? 'Online' : 'Offline');
+        }
+
+        // Test 1: DOM Node Exhaustion
+        async function testDOMExhaustion() {
             setStatus(1, 'RUNNING');
             disableButton(1);
-            log(1, 'Starting canvas size limit discovery...');
+            log(1, 'Testing DOM node limits...');
             
             try {
-                let low = 256;
-                let high = 16384;
-                let maxSize = 0;
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+                let nodeCount = 0;
+                const batchSize = 1000;
+                const maxNodes = 100000;
                 
-                log(1, 'Binary searching for maximum canvas dimension...');
+                log(1, `Creating DOM nodes in batches of ${batchSize}...`);
                 
-                while (low <= high) {
-                    const mid = Math.floor((low + high) / 2);
-                    log(1, `Testing ${mid}x${mid} canvas...`);
+                for (let batch = 0; batch < maxNodes / batchSize; batch++) {
+                    for (let i = 0; i < batchSize; i++) {
+                        const div = document.createElement('div');
+                        div.textContent = `Node ${nodeCount++}`;
+                        div.className = 'test-node';
+                        container.appendChild(div);
+                    }
                     
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = mid;
-                        canvas.height = mid;
-                        const ctx = canvas.getContext('2d');
-                        
-                        if (!ctx) {
-                            log(1, `Failed to get context at ${mid}x${mid}`);
-                            high = mid - 1;
-                            continue;
-                        }
-                        
-                        // Try to actually use it
-                        ctx.fillStyle = 'red';
-                        ctx.fillRect(0, 0, 10, 10);
-                        
-                        maxSize = mid;
-                        log(1, `✓ ${mid}x${mid} succeeded`);
-                        low = mid + 1;
-                        
-                        // Small delay to prevent hanging
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                        
-                    } catch (e) {
-                        log(1, `✗ ${mid}x${mid} failed: ${e.message}`);
-                        high = mid - 1;
+                    if (batch % 10 === 0) {
+                        log(1, `Created ${nodeCount} nodes...`);
+                        await new Promise(resolve => setTimeout(resolve, 50));
                     }
                 }
                 
-                log(1, `Maximum canvas size found: ${maxSize}x${maxSize}`);
-                log(1, `Total pixels: ${maxSize * maxSize} (${(maxSize * maxSize * 4 / 1024 / 1024).toFixed(2)} MB)`);
+                log(1, `Successfully created ${nodeCount} DOM nodes`);
+                log(1, 'Cleaning up...');
+                document.body.removeChild(container);
+                
                 setStatus(1, 'PASSED');
                 
             } catch (e) {
@@ -253,62 +260,40 @@
             enableButton(1);
         }
 
-        // Test 2: Canvas Count Limit Discovery
-        async function testCanvasCountLimit() {
+        // Test 2: Event Listener Leak
+        async function testEventListenerLeak() {
             setStatus(2, 'RUNNING');
             disableButton(2);
-            log(2, 'Finding maximum canvas count...');
+            log(2, 'Testing event listener limits...');
             
             try {
-                const canvases = [];
-                const canvasSize = 1024; // Use moderate size
-                let count = 0;
-                const maxAttempts = 500; // Prevent infinite loop
+                const elements = [];
+                const listenerCount = 10000;
                 
-                log(2, `Creating ${canvasSize}x${canvasSize} canvases...`);
+                log(2, 'Creating elements with multiple listeners...');
                 
-                for (let i = 0; i < maxAttempts; i++) {
-                    try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = canvasSize;
-                        canvas.height = canvasSize;
-                        const ctx = canvas.getContext('2d');
-                        
-                        if (!ctx) {
-                            log(2, `Failed to get context at canvas #${i}`);
-                            break;
-                        }
-                        
-                        // Fill with data to ensure memory allocation
-                        ctx.fillStyle = `rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255})`;
-                        ctx.fillRect(0, 0, canvasSize, canvasSize);
-                        
-                        canvases.push(canvas);
-                        count = i + 1;
-                        
-                        if (i % 10 === 0) {
-                            const progress = Math.min(100, (i / maxAttempts * 100));
-                            document.getElementById('progress2').style.width = progress + '%';
-                            document.getElementById('progress2').textContent = `${count} canvases`;
-                            log(2, `Created ${count} canvases (${(count * canvasSize * canvasSize * 4 / 1024 / 1024).toFixed(2)} MB)...`);
-                            
-                            // Yield to prevent hanging
-                            await new Promise(resolve => setTimeout(resolve, 50));
-                        }
-                        
-                    } catch (e) {
-                        log(2, `Exception at canvas #${i}: ${e.message}`);
-                        break;
+                for (let i = 0; i < 100; i++) {
+                    const el = document.createElement('div');
+                    elements.push(el);
+                    
+                    for (let j = 0; j < 100; j++) {
+                        el.addEventListener('click', function handler() {});
+                        el.addEventListener('mouseover', function handler() {});
+                        el.addEventListener('mouseout', function handler() {});
+                    }
+                    
+                    if (i % 10 === 0) {
+                        log(2, `Created ${i} elements with ~300 listeners each...`);
+                        await new Promise(resolve => setTimeout(resolve, 20));
                     }
                 }
                 
-                log(2, `Maximum canvases created: ${count}`);
-                log(2, `Total memory: ${(count * canvasSize * canvasSize * 4 / 1024 / 1024).toFixed(2)} MB`);
+                log(2, `Total estimated listeners: ${elements.length * 300}`);
+                log(2, 'Testing listener memory retention...');
                 
-                // Cleanup
-                log(2, 'Cleaning up canvases...');
-                canvases.length = 0;
+                elements.length = 0;
                 
+                log(2, 'Test completed');
                 setStatus(2, 'PASSED');
                 
             } catch (e) {
@@ -318,50 +303,38 @@
             enableButton(2);
         }
 
-        // Test 3: ImageData Race Condition
-        async function testImageDataRace() {
+        // Test 3: XHR/Fetch Connection Exhaustion
+        async function testNetworkExhaustion() {
             setStatus(3, 'RUNNING');
             disableButton(3);
-            log(3, 'Testing ImageData race conditions...');
+            log(3, 'Testing network connection limits...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 512;
-                canvas.height = 512;
-                const ctx = canvas.getContext('2d');
+                const requests = [];
+                const maxRequests = 100;
                 
-                log(3, 'Creating initial image data...');
-                ctx.fillStyle = 'red';
-                ctx.fillRect(0, 0, 512, 512);
+                log(3, `Attempting ${maxRequests} concurrent requests...`);
                 
-                log(3, 'Starting rapid getImageData/putImageData cycle...');
-                
-                for (let i = 0; i < 100; i++) {
-                    const imageData1 = ctx.getImageData(0, 0, 512, 512);
-                    const imageData2 = ctx.getImageData(0, 0, 512, 512);
+                for (let i = 0; i < maxRequests; i++) {
+                    const promise = fetch('https://httpbin.org/delay/10')
+                        .then(r => {
+                            log(3, `Request ${i} completed`);
+                            return r;
+                        })
+                        .catch(e => {
+                            log(3, `Request ${i} failed: ${e.message}`);
+                        });
                     
-                    // Modify while another operation is pending
-                    ctx.fillStyle = `rgb(${i % 255}, 0, 0)`;
-                    ctx.fillRect(0, 0, 512, 512);
-                    
-                    // Try to put old data back
-                    ctx.putImageData(imageData1, 0, 0);
-                    ctx.putImageData(imageData2, 0, 0);
+                    requests.push(promise);
                     
                     if (i % 10 === 0) {
-                        log(3, `Iteration ${i}/100...`);
-                        await new Promise(resolve => setTimeout(resolve, 10));
+                        log(3, `Initiated ${i} requests...`);
+                        await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 
-                log(3, 'Testing overlapping regions...');
-                for (let i = 0; i < 50; i++) {
-                    const data1 = ctx.getImageData(0, 0, 256, 256);
-                    const data2 = ctx.getImageData(128, 128, 256, 256);
-                    
-                    ctx.putImageData(data1, 128, 128);
-                    ctx.putImageData(data2, 0, 0);
-                }
+                log(3, 'Waiting for requests to complete...');
+                await Promise.allSettled(requests);
                 
                 log(3, 'Test completed');
                 setStatus(3, 'PASSED');
@@ -373,58 +346,47 @@
             enableButton(3);
         }
 
-        // Test 4: Canvas Context Corruption
-        async function testContextCorruption() {
+        // Test 4: Timer/Interval Exhaustion
+        async function testTimerExhaustion() {
             setStatus(4, 'RUNNING');
             disableButton(4);
-            log(4, 'Testing context corruption...');
+            log(4, 'Testing timer limits...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 800;
-                canvas.height = 600;
-                const ctx = canvas.getContext('2d');
+                const timers = [];
+                const timerCount = 10000;
                 
-                log(4, 'Rapidly changing context state...');
+                log(4, `Creating ${timerCount} timers...`);
                 
-                for (let i = 0; i < 1000; i++) {
-                    ctx.save();
-                    ctx.fillStyle = `rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255})`;
-                    ctx.strokeStyle = `rgb(${(i * 3) % 255}, ${i % 255}, ${(i * 2) % 255})`;
-                    ctx.lineWidth = (i % 50) + 1;
-                    ctx.globalAlpha = Math.random();
-                    ctx.globalCompositeOperation = ['source-over', 'multiply', 'screen', 'overlay'][i % 4];
+                for (let i = 0; i < timerCount; i++) {
+                    const timer = setTimeout(() => {}, 60000);
+                    timers.push(timer);
                     
-                    ctx.fillRect(Math.random() * 800, Math.random() * 600, 50, 50);
-                    ctx.restore();
-                    
-                    if (i % 100 === 0) {
-                        log(4, `${i}/1000 operations...`);
+                    if (i % 1000 === 0) {
+                        log(4, `Created ${i} timers...`);
                         await new Promise(resolve => setTimeout(resolve, 10));
                     }
                 }
                 
-                log(4, 'Testing excessive save/restore nesting...');
-                for (let i = 0; i < 10000; i++) {
-                    ctx.save();
-                }
-                log(4, 'Saved 10000 states');
+                log(4, `Successfully created ${timerCount} timers`);
+                log(4, 'Clearing timers...');
                 
-                for (let i = 0; i < 10000; i++) {
-                    ctx.restore();
+                for (let timer of timers) {
+                    clearTimeout(timer);
                 }
-                log(4, 'Restored 10000 states');
                 
-                log(4, 'Testing state corruption with invalid values...');
-                try {
-                    ctx.lineWidth = -1;
-                    ctx.lineWidth = Infinity;
-                    ctx.lineWidth = NaN;
-                    ctx.globalAlpha = -1;
-                    ctx.globalAlpha = 2;
-                    log(4, 'Invalid values handled');
-                } catch (e) {
-                    log(4, `Invalid value exception: ${e.message}`);
+                log(4, 'Testing intervals...');
+                const intervals = [];
+                
+                for (let i = 0; i < 1000; i++) {
+                    const interval = setInterval(() => {}, 1000);
+                    intervals.push(interval);
+                }
+                
+                log(4, `Created ${intervals.length} intervals`);
+                
+                for (let interval of intervals) {
+                    clearInterval(interval);
                 }
                 
                 log(4, 'Test completed');
@@ -437,53 +399,36 @@
             enableButton(4);
         }
 
-        // Test 5: toDataURL/toBlob Memory Leak
-        async function testCanvasExport() {
+        // Test 5: Nested iframe Exhaustion
+        async function testIframeExhaustion() {
             setStatus(5, 'RUNNING');
             disableButton(5);
-            log(5, 'Testing canvas export operations...');
+            log(5, 'Testing iframe limits...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 1024;
-                canvas.height = 1024;
-                const ctx = canvas.getContext('2d');
+                const iframes = [];
+                const maxIframes = 50;
                 
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, 0, 1024, 1024);
+                log(5, `Creating ${maxIframes} iframes...`);
                 
-                log(5, 'Repeatedly calling toDataURL...');
-                const dataUrls = [];
-                
-                for (let i = 0; i < 50; i++) {
-                    const dataUrl = canvas.toDataURL('image/png');
-                    dataUrls.push(dataUrl);
+                for (let i = 0; i < maxIframes; i++) {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = 'about:blank';
+                    document.body.appendChild(iframe);
+                    iframes.push(iframe);
                     
                     if (i % 10 === 0) {
-                        log(5, `Generated ${i + 1} data URLs (${(dataUrl.length / 1024).toFixed(2)} KB each)...`);
+                        log(5, `Created ${i} iframes...`);
                         await new Promise(resolve => setTimeout(resolve, 100));
                     }
                 }
                 
-                log(5, `Total memory in data URLs: ${(dataUrls.reduce((sum, url) => sum + url.length, 0) / 1024 / 1024).toFixed(2)} MB`);
+                log(5, `Successfully created ${iframes.length} iframes`);
+                log(5, 'Cleaning up...');
                 
-                if (canvas.toBlob) {
-                    log(5, 'Testing toBlob...');
-                    const blobs = [];
-                    
-                    for (let i = 0; i < 20; i++) {
-                        await new Promise((resolve) => {
-                            canvas.toBlob((blob) => {
-                                blobs.push(blob);
-                                log(5, `Blob ${i + 1}: ${(blob.size / 1024).toFixed(2)} KB`);
-                                resolve();
-                            });
-                        });
-                    }
-                    
-                    log(5, `Created ${blobs.length} blobs`);
-                } else {
-                    log(5, 'toBlob not supported');
+                for (let iframe of iframes) {
+                    document.body.removeChild(iframe);
                 }
                 
                 log(5, 'Test completed');
@@ -496,63 +441,50 @@
             enableButton(5);
         }
 
-        // Test 6: Canvas Pattern/Gradient Overflow
-        async function testPatternOverflow() {
+        // Test 6: Web Worker Exhaustion
+        async function testWorkerExhaustion() {
             setStatus(6, 'RUNNING');
             disableButton(6);
-            log(6, 'Testing pattern and gradient operations...');
+            log(6, 'Testing Web Worker limits...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 800;
-                canvas.height = 600;
-                const ctx = canvas.getContext('2d');
-                
-                log(6, 'Creating many patterns...');
-                const patternCanvas = document.createElement('canvas');
-                patternCanvas.width = 100;
-                patternCanvas.height = 100;
-                const patternCtx = patternCanvas.getContext('2d');
-                patternCtx.fillStyle = 'red';
-                patternCtx.fillRect(0, 0, 100, 100);
-                
-                for (let i = 0; i < 1000; i++) {
-                    const pattern = ctx.createPattern(patternCanvas, 'repeat');
-                    ctx.fillStyle = pattern;
-                    ctx.fillRect(0, 0, 800, 600);
-                    
-                    if (i % 100 === 0) {
-                        log(6, `Created ${i + 1} patterns...`);
-                        await new Promise(resolve => setTimeout(resolve, 10));
-                    }
+                if (typeof Worker === 'undefined') {
+                    log(6, 'Web Workers not supported');
+                    setStatus(6, 'PASSED');
+                    enableButton(6);
+                    return;
                 }
                 
-                log(6, 'Testing complex gradients...');
+                const workers = [];
+                const workerCode = 'self.onmessage = function(e) { self.postMessage(e.data); }';
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                
+                log(6, 'Creating Web Workers...');
+                
                 for (let i = 0; i < 100; i++) {
-                    const gradient = ctx.createLinearGradient(0, 0, 800, 600);
-                    
-                    // Add many color stops
-                    for (let j = 0; j < 100; j++) {
-                        gradient.addColorStop(j / 100, `rgb(${j * 2}, ${j}, ${255 - j * 2})`);
-                    }
-                    
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(0, 0, 800, 600);
-                    
-                    if (i % 10 === 0) {
-                        log(6, `Created gradient ${i + 1}...`);
-                        await new Promise(resolve => setTimeout(resolve, 10));
+                    try {
+                        const worker = new Worker(workerUrl);
+                        workers.push(worker);
+                        
+                        if (i % 10 === 0) {
+                            log(6, `Created ${i} workers...`);
+                            await new Promise(resolve => setTimeout(resolve, 50));
+                        }
+                    } catch (e) {
+                        log(6, `Failed at worker ${i}: ${e.message}`);
+                        break;
                     }
                 }
                 
-                log(6, 'Testing radial gradients with extreme values...');
-                try {
-                    const rg1 = ctx.createRadialGradient(0, 0, 0, 0, 0, 1000000);
-                    const rg2 = ctx.createRadialGradient(-1000, -1000, 1, 2000, 2000, 10000);
-                    log(6, 'Extreme gradient values accepted');
-                } catch (e) {
-                    log(6, `Extreme values rejected: ${e.message}`);
+                log(6, `Successfully created ${workers.length} workers`);
+                log(6, 'Terminating workers...');
+                
+                for (let worker of workers) {
+                    worker.terminate();
                 }
+                
+                URL.revokeObjectURL(workerUrl);
                 
                 log(6, 'Test completed');
                 setStatus(6, 'PASSED');
@@ -564,56 +496,44 @@
             enableButton(6);
         }
 
-        // Test 7: Canvas Transform Matrix Bugs
-        async function testTransformBugs() {
+        // Test 7: Video/Audio Element Exhaustion
+        async function testMediaExhaustion() {
             setStatus(7, 'RUNNING');
             disableButton(7);
-            log(7, 'Testing transformation matrix edge cases...');
+            log(7, 'Testing media element limits...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 800;
-                canvas.height = 600;
-                const ctx = canvas.getContext('2d');
+                const mediaElements = [];
+                const maxMedia = 100;
+                const audioData = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
                 
-                log(7, 'Testing extreme scale values...');
-                ctx.save();
-                ctx.scale(0.0000001, 0.0000001);
-                ctx.fillRect(0, 0, 100, 100);
-                ctx.restore();
+                log(7, `Creating ${maxMedia} audio elements...`);
                 
-                ctx.save();
-                ctx.scale(1000000, 1000000);
-                ctx.fillRect(0, 0, 100, 100);
-                ctx.restore();
-                
-                log(7, 'Testing extreme rotation...');
-                for (let i = 0; i < 1000; i++) {
-                    ctx.save();
-                    ctx.rotate(Math.PI * 2 * i);
-                    ctx.fillRect(0, 0, 10, 10);
-                    ctx.restore();
+                for (let i = 0; i < maxMedia; i++) {
+                    const audio = document.createElement('audio');
+                    audio.src = audioData;
+                    mediaElements.push(audio);
+                    
+                    if (i % 10 === 0) {
+                        log(7, `Created ${i} audio elements...`);
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
                 }
                 
-                log(7, 'Testing singular matrix...');
-                try {
-                    ctx.setTransform(0, 0, 0, 0, 0, 0);
-                    ctx.fillRect(0, 0, 100, 100);
-                    log(7, 'Singular matrix accepted');
-                } catch (e) {
-                    log(7, `Singular matrix rejected: ${e.message}`);
-                }
+                log(7, `Successfully created ${mediaElements.length} audio elements`);
+                log(7, 'Attempting to load all media...');
                 
-                log(7, 'Testing transform accumulation...');
-                ctx.setTransform(1, 0, 0, 1, 0, 0);
-                for (let i = 0; i < 10000; i++) {
-                    ctx.translate(0.1, 0.1);
-                    ctx.scale(1.001, 1.001);
-                    ctx.rotate(0.001);
+                for (let i = 0; i < mediaElements.length; i++) {
+                    try {
+                        mediaElements[i].load();
+                    } catch (e) {
+                        log(7, `Load failed at ${i}: ${e.message}`);
+                    }
+                    
+                    if (i % 20 === 0) {
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                    }
                 }
-                
-                const transform = ctx.getTransform();
-                log(7, `Final transform: a=${transform.a.toFixed(4)}, d=${transform.d.toFixed(4)}`);
                 
                 log(7, 'Test completed');
                 setStatus(7, 'PASSED');
@@ -625,62 +545,35 @@
             enableButton(7);
         }
 
-        // Test 8: Cross-Canvas Memory Confusion
-        async function testCrossCanvasConfusion() {
+        // Test 8: CSS Style Exhaustion
+        async function testCSSExhaustion() {
             setStatus(8, 'RUNNING');
             disableButton(8);
-            log(8, 'Testing cross-canvas memory operations...');
+            log(8, 'Testing CSS limits...');
             
             try {
-                log(8, 'Creating multiple canvases...');
-                const canvases = [];
-                const contexts = [];
+                const style = document.createElement('style');
+                document.head.appendChild(style);
+                const sheet = style.sheet;
                 
-                for (let i = 0; i < 10; i++) {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 512;
-                    canvas.height = 512;
-                    const ctx = canvas.getContext('2d');
-                    ctx.fillStyle = `rgb(${i * 25}, 0, 0)`;
-                    ctx.fillRect(0, 0, 512, 512);
-                    canvases.push(canvas);
-                    contexts.push(ctx);
-                }
+                log(8, 'Creating CSS rules...');
                 
-                log(8, 'Testing cross-canvas drawImage...');
-                for (let i = 0; i < contexts.length; i++) {
-                    for (let j = 0; j < canvases.length; j++) {
-                        if (i !== j) {
-                            contexts[i].drawImage(canvases[j], 0, 0);
-                        }
+                for (let i = 0; i < 10000; i++) {
+                    try {
+                        sheet.insertRule(`.class${i} { color: rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255}); }`, sheet.cssRules.length);
+                    } catch (e) {
+                        log(8, `Rule insertion failed at ${i}: ${e.message}`);
+                        break;
                     }
                     
-                    if (i % 2 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 10));
+                    if (i % 1000 === 0) {
+                        log(8, `Created ${i} CSS rules...`);
+                        await new Promise(resolve => setTimeout(resolve, 20));
                     }
                 }
                 
-                log(8, 'Testing ImageData transfer between canvases...');
-                for (let i = 0; i < contexts.length - 1; i++) {
-                    const imageData = contexts[i].getImageData(0, 0, 512, 512);
-                    contexts[i + 1].putImageData(imageData, 0, 0);
-                }
-                
-                log(8, 'Testing pattern sharing...');
-                const patternSource = canvases[0];
-                for (let i = 1; i < contexts.length; i++) {
-                    const pattern = contexts[i].createPattern(patternSource, 'repeat');
-                    contexts[i].fillStyle = pattern;
-                    contexts[i].fillRect(0, 0, 512, 512);
-                }
-                
-                log(8, 'Modifying source canvas while pattern active...');
-                contexts[0].fillStyle = 'blue';
-                contexts[0].fillRect(0, 0, 512, 512);
-                
-                for (let i = 1; i < contexts.length; i++) {
-                    contexts[i].fillRect(0, 0, 512, 512);
-                }
+                log(8, `Total CSS rules: ${sheet.cssRules.length}`);
+                document.head.removeChild(style);
                 
                 log(8, 'Test completed');
                 setStatus(8, 'PASSED');
@@ -691,6 +584,111 @@
             }
             enableButton(8);
         }
+
+        // Test 9: WebGL Context Exhaustion
+        async function testWebGLExhaustion() {
+            setStatus(9, 'RUNNING');
+            disableButton(9);
+            log(9, 'Testing WebGL context limits...');
+            
+            try {
+                const canvases = [];
+                const contexts = [];
+                
+                log(9, 'Creating WebGL contexts...');
+                
+                for (let i = 0; i < 50; i++) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 256;
+                        canvas.height = 256;
+                        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                        
+                        if (!gl) {
+                            log(9, `WebGL context creation failed at ${i}`);
+                            break;
+                        }
+                        
+                        gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
+                        gl.clear(gl.COLOR_BUFFER_BIT);
+                        
+                        canvases.push(canvas);
+                        contexts.push(gl);
+                        
+                        if (i % 5 === 0) {
+                            log(9, `Created ${i} WebGL contexts...`);
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                    } catch (e) {
+                        log(9, `Exception at context ${i}: ${e.message}`);
+                        break;
+                    }
+                }
+                
+                log(9, `Successfully created ${contexts.length} WebGL contexts`);
+                
+                if (contexts.length > 0 && contexts[0].getExtension) {
+                    const ext = contexts[0].getExtension('WEBGL_lose_context');
+                    if (ext) {
+                        log(9, 'WEBGL_lose_context extension available');
+                        for (let ctx of contexts) {
+                            const loseExt = ctx.getExtension('WEBGL_lose_context');
+                            if (loseExt) loseExt.loseContext();
+                        }
+                    }
+                }
+                
+                log(9, 'Test completed');
+                setStatus(9, 'PASSED');
+                
+            } catch (e) {
+                log(9, `Exception: ${e.message}`);
+                setStatus(9, 'FAILED');
+            }
+            enableButton(9);
+        }
+
+        // Test 10: Large String Allocation
+        async function testStringExhaustion() {
+            setStatus(10, 'RUNNING');
+            disableButton(10);
+            log(10, 'Testing JavaScript heap limits...');
+            
+            try {
+                const strings = [];
+                const chunkSize = 10 * 1024 * 1024; // 10MB
+                
+                log(10, `Allocating strings in ${chunkSize / 1024 / 1024}MB chunks...`);
+                
+                for (let i = 0; i < 100; i++) {
+                    try {
+                        const str = 'A'.repeat(chunkSize);
+                        strings.push(str);
+                        log(10, `Allocated ${(i + 1) * chunkSize / 1024 / 1024}MB...`);
+                        
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (e) {
+                        log(10, `Allocation failed at ${i * chunkSize / 1024 / 1024}MB: ${e.message}`);
+                        break;
+                    }
+                }
+                
+                log(10, `Total allocated: ${strings.length * chunkSize / 1024 / 1024}MB`);
+                log(10, 'Clearing strings...');
+                strings.length = 0;
+                
+                log(10, 'Test completed');
+                setStatus(10, 'PASSED');
+                
+            } catch (e) {
+                log(10, `Exception: ${e.message}`);
+                setStatus(10, 'FAILED');
+            }
+            enableButton(10);
+        }
+
+        // Initialize
+        displaySystemInfo();
     </script>
 </body>
 </html>
