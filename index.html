@@ -239,6 +239,41 @@
         </div>
 
         <div class="test-section">
+            <h3>Test 14d: MutationObserver Infinite Recursion <span class="cve-tag">CRITICAL</span> <span class="status" id="status14d"></span></h3>
+            <p>Targeted infinite recursion in MutationObserver callbacks.</p>
+            <button onclick="testMutationRecursion()">Run Test</button>
+            <div class="log" id="log14d"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 14d: MutationObserver Infinite Recursion <span class="cve-tag">CRITICAL</span> <span class="status" id="status14d"></span></h3>
+            <p>Targeted infinite recursion in MutationObserver callbacks.</p>
+            <button onclick="testMutationRecursion()">Run Test</button>
+            <div class="log" id="log14d"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 17: Worker + MessageChannel UAF <span class="cve-tag">CRITICAL</span> <span class="status" id="status17"></span></h3>
+            <p>Cross-worker memory corruption through MessageChannel.</p>
+            <button onclick="testWorkerChannelUAF()">Run Test</button>
+            <div class="log" id="log17"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 18: WebRTC Memory Corruption <span class="cve-tag">HIGH</span> <span class="status" id="status18"></span></h3>
+            <p>WebRTC peer connection and data channel exploitation.</p>
+            <button onclick="testWebRTCCorruption()">Run Test</button>
+            <div class="log" id="log18"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 19: IndexedDB Transaction UAF <span class="cve-tag">HIGH</span> <span class="status" id="status19"></span></h3>
+            <p>Database transaction use-after-free through rapid operations.</p>
+            <button onclick="testIndexedDBUAF()">Run Test</button>
+            <div class="log" id="log19"></div>
+        </div>
+
+        <div class="test-section">
             <h3>Test 15: Advanced Memory Disclosure <span class="cve-tag">CRITICAL</span> <span class="status" id="status15"></span></h3>
             <p>Sophisticated memory disclosure through side-channel attacks.</p>
             <button onclick="testMemoryDisclosure()">Run Test</button>
@@ -1817,6 +1852,85 @@ Language: ${navigator.language}`;
             }
         }
 
+        // Test 14d: MutationObserver Infinite Recursion (Targeted)
+        function testMutationRecursion() {
+            setStatus('14d', 'RUNNING');
+            log('14d', 'Targeted MutationObserver infinite recursion...');
+            
+            try {
+                log('14d', 'Creating minimal recursion trigger...');
+                
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+                
+                let recursionCount = 0;
+                const maxRecursion = 10000;
+                
+                const observer = new MutationObserver(function(mutations) {
+                    recursionCount++;
+                    log('14d', `Recursion depth: ${recursionCount}`);
+                    
+                    if (recursionCount > maxRecursion) {
+                        log('14d', 'Max recursion reached - should have crashed by now');
+                        setStatus('14d', 'PASSED');
+                        return;
+                    }
+                    
+                    // Trigger another mutation immediately
+                    try {
+                        container.setAttribute('data-count', recursionCount.toString());
+                        
+                        // Also add/remove nodes to stress the system
+                        const node = document.createElement('span');
+                        node.textContent = recursionCount.toString();
+                        container.appendChild(node);
+                        
+                        // Immediate removal to create more mutation events
+                        if (recursionCount % 2 === 0) {
+                            node.remove();
+                        }
+                        
+                        // Cross-frame recursion if possible
+                        if (recursionCount % 100 === 0) {
+                            const iframe = document.createElement('iframe');
+                            iframe.style.display = 'none';
+                            container.appendChild(iframe);
+                            
+                            setTimeout(() => {
+                                try {
+                                    iframe.remove();
+                                } catch (e) {}
+                            }, 1);
+                        }
+                        
+                    } catch (e) {
+                        log('14d', `Recursion error at depth ${recursionCount}: ${e.message}`);
+                    }
+                });
+                
+                observer.observe(container, {
+                    childList: true,
+                    attributes: true,
+                    subtree: true
+                });
+                
+                log('14d', 'Triggering initial mutation...');
+                container.setAttribute('data-start', 'true');
+                
+                // Fallback cleanup in case recursion doesn't crash
+                setTimeout(() => {
+                    observer.disconnect();
+                    container.remove();
+                    log('14d', `Test completed with ${recursionCount} recursions`);
+                    setStatus('14d', 'PASSED');
+                }, 5000);
+                
+            } catch (e) {
+                log('14d', `CRASH/EXCEPTION: ${e.message}`);
+                setStatus('14d', 'CRASHED');
+            }
+        }
+
         // Test 15: Advanced Memory Disclosure
         function testMemoryDisclosure() {
             setStatus(15, 'RUNNING');
@@ -2189,6 +2303,11 @@ Language: ${navigator.language}`;
                 testDOMMutationUAF,
                 testDOMRangeUAF,
                 testSelectionUAF,
+                testMutationRecursion,
+                testMutationRecursion,
+                testWorkerChannelUAF,
+                testWebRTCCorruption,
+                testIndexedDBUAF,
                 testMemoryDisclosure,
                 testNativeCodeInjection
             ];
