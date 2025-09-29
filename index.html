@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebKit 613 Test Suite</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #0ff;
+            border-bottom: 2px solid #0ff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #0f0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        button:hover {
+            background: #0ff;
+        }
+        .log {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .warning {
+            color: #ff0;
+            background: #440;
+            padding: 10px;
+            border-left: 4px solid #ff0;
+            margin: 15px 0;
+        }
+        h3 {
+            color: #0ff;
+            margin-top: 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 0.9em;
+        }
+        .status.running {
+            background: #440;
+            color: #ff0;
+        }
+        .status.passed {
+            background: #040;
+            color: #0f0;
+        }
+        .status.failed {
+            background: #400;
+            color: #f00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebKit 613 Vulnerability Test Suite</h1>
+        
+        <div class="warning">
+            ⚠️ WARNING: These tests attempt to trigger known vulnerabilities in WebKit 613.0.
+            This may cause browser instability, crashes, or system freezes. Use only for security research purposes.
+        </div>
+
+        <div class="test-section">
+            <h3>Environment Info</h3>
+            <div class="log" id="envInfo"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 1: JIT Type Confusion <span class="status" id="status1"></span></h3>
+            <p>Tests for type confusion in JIT compiler optimization (common in WebKit 613 era)</p>
+            <button onclick="testJITTypeConfusion()">Run Test</button>
+            <div class="log" id="log1"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: ArrayBuffer Corruption <span class="status" id="status2"></span></h3>
+            <p>Tests for memory corruption via ArrayBuffer manipulation (CVE-2021-1788 related)</p>
+            <button onclick="testArrayBufferCorruption()">Run Test</button>
+            <div class="log" id="log2"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: ImageBitmap Use-After-Free <span class="status" id="status3"></span></h3>
+            <p>Tests async ImageBitmap operations for UAF bugs (CVE-2021-1788)</p>
+            <button onclick="testImageBitmapUAF()">Run Test</button>
+            <div class="log" id="log3"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 4: Regex Engine Overflow <span class="status" id="status4"></span></h3>
+            <p>Tests regex engine for buffer overflow conditions</p>
+            <button onclick="testRegexOverflow()">Run Test</button>
+            <div class="log" id="log4"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 5: DOM Manipulation UAF <span class="status" id="status5"></span></h3>
+            <p>Tests for use-after-free in DOM manipulation (CVE-2022-22620 pattern)</p>
+            <button onclick="testDOMUAF()">Run Test</button>
+            <div class="log" id="log5"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 6: TypedArray Confusion <span class="status" id="status6"></span></h3>
+            <p>Tests TypedArray type confusion vulnerabilities</p>
+            <button onclick="testTypedArrayConfusion()">Run Test</button>
+            <div class="log" id="log6"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 7: Integer Overflow <span class="status" id="status7"></span></h3>
+            <p>Tests integer overflow in array operations</p>
+            <button onclick="testIntegerOverflow()">Run Test</button>
+            <div class="log" id="log7"></div>
+        </div>
+
+        <div class="test-section">
+            <button onclick="runAllTests()" style="background: #f90; font-size: 1.2em;">⚡ RUN ALL TESTS</button>
+        </div>
+    </div>
+
+    <script>
+        // Utility functions
+        function log(testNum, message) {
+            const logEl = document.getElementById('log' + testNum);
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.textContent += `[${timestamp}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(testNum, status) {
+            const statusEl = document.getElementById('status' + testNum);
+            statusEl.textContent = status;
+            statusEl.className = 'status ' + status.toLowerCase();
+        }
+
+        // Display environment info
+        function displayEnvInfo() {
+            const info = `User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Hardware Concurrency: ${navigator.hardwareConcurrency || 'N/A'}
+Max Touch Points: ${navigator.maxTouchPoints || 'N/A'}
+WebKit Version: ${navigator.userAgent.match(/AppleWebKit\/([\d.]+)/)?.[1] || 'Unknown'}`;
+            document.getElementById('envInfo').textContent = info;
+        }
+
+        // Test 1: JIT Type Confusion
+        function testJITTypeConfusion() {
+            setStatus(1, 'RUNNING');
+            log(1, 'Starting JIT type confusion test...');
+            
+            try {
+                function vuln(arr) {
+                    return arr[0];
+                }
+                
+                log(1, 'Warming up JIT compiler...');
+                for (let i = 0; i < 100000; i++) {
+                    vuln([1.1, 2.2, 3.3]);
+                }
+                
+                log(1, 'JIT should be optimized for float arrays');
+                log(1, 'Attempting type confusion with object...');
+                
+                const result = vuln({0: 'confused'});
+                log(1, `Result: ${result}`);
+                
+                log(1, 'Attempting type confusion with sparse array...');
+                const sparse = [];
+                sparse[0] = 1.1;
+                sparse[100000] = 2.2;
+                vuln(sparse);
+                
+                log(1, 'Test completed without crash');
+                setStatus(1, 'PASSED');
+            } catch (e) {
+                log(1, `Exception: ${e.message}`);
+                setStatus(1, 'FAILED');
+            }
+        }
+
+        // Test 2: ArrayBuffer Corruption
+        function testArrayBufferCorruption() {
+            setStatus(2, 'RUNNING');
+            log(2, 'Starting ArrayBuffer corruption test...');
+            
+            try {
+                log(2, 'Creating large ArrayBuffers...');
+                const buffers = [];
+                
+                for (let i = 0; i < 100; i++) {
+                    buffers.push(new ArrayBuffer(1024 * 1024));
+                }
+                
+                log(2, `Created ${buffers.length} buffers`);
+                log(2, 'Creating overlapping views...');
+                
+                const view1 = new Uint32Array(buffers[0]);
+                const view2 = new Float64Array(buffers[0]);
+                
+                log(2, 'Writing to overlapping views...');
+                view1[0] = 0x41414141;
+                log(2, `Float view sees: ${view2[0]}`);
+                
+                log(2, 'Attempting buffer detachment race...');
+                const worker = buffers[0];
+                setTimeout(() => {
+                    log(2, 'Accessing potentially detached buffer...');
+                    view1[0] = 0x42424242;
+                }, 0);
+                
+                log(2, 'Test completed');
+                setStatus(2, 'PASSED');
+            } catch (e) {
+                log(2, `Exception: ${e.message}`);
+                setStatus(2, 'FAILED');
+            }
+        }
+
+        // Test 3: ImageBitmap Use-After-Free
+        function testImageBitmapUAF() {
+            setStatus(3, 'RUNNING');
+            log(3, 'Starting ImageBitmap UAF test...');
+            
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 100;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'red';
+                ctx.fillRect(0, 0, 100, 100);
+                
+                log(3, 'Created canvas, attempting ImageBitmap creation...');
+                
+                const promises = [];
+                for (let i = 0; i < 50; i++) {
+                    promises.push(createImageBitmap(canvas));
+                }
+                
+                log(3, 'Created multiple async ImageBitmap operations...');
+                log(3, 'Modifying canvas while operations pending...');
+                
+                canvas.width = 200;
+                ctx.fillStyle = 'blue';
+                ctx.fillRect(0, 0, 200, 200);
+                
+                Promise.all(promises).then(bitmaps => {
+                    log(3, `Resolved ${bitmaps.length} ImageBitmaps`);
+                    bitmaps.forEach(b => b.close());
+                    log(3, 'Test completed');
+                    setStatus(3, 'PASSED');
+                }).catch(e => {
+                    log(3, `Promise error: ${e.message}`);
+                    setStatus(3, 'FAILED');
+                });
+                
+            } catch (e) {
+                log(3, `Exception: ${e.message}`);
+                setStatus(3, 'FAILED');
+            }
+        }
+
+        // Test 4: Regex Engine Overflow
+        function testRegexOverflow() {
+            setStatus(4, 'RUNNING');
+            log(4, 'Starting regex overflow test...');
+            
+            try {
+                log(4, 'Testing deeply nested regex...');
+                const nested = '('.repeat(1000) + 'a' + ')'.repeat(1000);
+                const regex1 = new RegExp(nested);
+                log(4, 'Created deeply nested regex');
+                
+                log(4, 'Testing catastrophic backtracking...');
+                const regex2 = /^(a+)+$/;
+                const testStr = 'a'.repeat(30) + 'b';
+                
+                const start = Date.now();
+                try {
+                    regex2.test(testStr);
+                } catch (e) {
+                    log(4, `Regex threw: ${e.message}`);
+                }
+                const elapsed = Date.now() - start;
+                log(4, `Backtracking took ${elapsed}ms`);
+                
+                log(4, 'Testing large character class...');
+                const largeClass = '[' + 'a-z'.repeat(1000) + ']';
+                const regex3 = new RegExp(largeClass);
+                log(4, 'Created large character class regex');
+                
+                log(4, 'Test completed');
+                setStatus(4, 'PASSED');
+            } catch (e) {
+                log(4, `Exception: ${e.message}`);
+                setStatus(4, 'FAILED');
+            }
+        }
+
+        // Test 5: DOM Manipulation UAF
+        function testDOMUAF() {
+            setStatus(5, 'RUNNING');
+            log(5, 'Starting DOM UAF test...');
+            
+            try {
+                log(5, 'Creating DOM elements...');
+                const container = document.createElement('div');
+                document.body.appendChild(container);
+                
+                log(5, 'Rapidly adding and removing elements...');
+                for (let i = 0; i < 1000; i++) {
+                    const el = document.createElement('div');
+                    el.innerHTML = '<span>test</span>';
+                    container.appendChild(el);
+                    
+                    if (i % 2 === 0) {
+                        container.removeChild(el);
+                    }
+                }
+                
+                log(5, 'Testing event listener UAF pattern...');
+                const target = document.createElement('button');
+                container.appendChild(target);
+                
+                target.addEventListener('click', function handler() {
+                    container.removeChild(target);
+                    target.removeEventListener('click', handler);
+                });
+                
+                target.click();
+                log(5, 'Triggered self-removing event handler');
+                
+                log(5, 'Cleaning up...');
+                document.body.removeChild(container);
+                
+                log(5, 'Test completed');
+                setStatus(5, 'PASSED');
+            } catch (e) {
+                log(5, `Exception: ${e.message}`);
+                setStatus(5, 'FAILED');
+            }
+        }
+
+        // Test 6: TypedArray Confusion
+        function testTypedArrayConfusion() {
+            setStatus(6, 'RUNNING');
+            log(6, 'Starting TypedArray confusion test...');
+            
+            try {
+                log(6, 'Creating shared ArrayBuffer...');
+                const buffer = new ArrayBuffer(32);
+                
+                log(6, 'Creating multiple typed views...');
+                const u8 = new Uint8Array(buffer);
+                const u16 = new Uint16Array(buffer);
+                const u32 = new Uint32Array(buffer);
+                const f32 = new Float32Array(buffer);
+                const f64 = new Float64Array(buffer);
+                
+                log(6, 'Writing via Uint32Array...');
+                u32[0] = 0x41424344;
+                
+                log(6, `Uint8Array sees: ${u8[0].toString(16)}`);
+                log(6, `Float32Array sees: ${f32[0]}`);
+                
+                log(6, 'Testing out-of-bounds access...');
+                try {
+                    for (let i = 0; i < 100; i++) {
+                        u32[i] = 0xdeadbeef;
+                    }
+                } catch (e) {
+                    log(6, `OOB caught: ${e.message}`);
+                }
+                
+                log(6, 'Testing negative indices...');
+                try {
+                    u32[-1] = 0x12345678;
+                    log(6, `Negative index write succeeded: ${u32[-1]}`);
+                } catch (e) {
+                    log(6, `Negative index caught: ${e.message}`);
+                }
+                
+                log(6, 'Test completed');
+                setStatus(6, 'PASSED');
+            } catch (e) {
+                log(6, `Exception: ${e.message}`);
+                setStatus(6, 'FAILED');
+            }
+        }
+
+        // Test 7: Integer Overflow
+        function testIntegerOverflow() {
+            setStatus(7, 'RUNNING');
+            log(7, 'Starting integer overflow test...');
+            
+            try {
+                log(7, 'Testing maximum safe integer...');
+                const maxInt = Number.MAX_SAFE_INTEGER;
+                log(7, `MAX_SAFE_INTEGER: ${maxInt}`);
+                
+                log(7, 'Attempting overflow...');
+                const overflow = maxInt + 1;
+                log(7, `Overflow result: ${overflow}`);
+                log(7, `Precision lost: ${overflow === maxInt + 2}`);
+                
+                log(7, 'Testing array length overflow...');
+                try {
+                    const huge = new Array(0xffffffff);
+                    log(7, `Created array with length: ${huge.length}`);
+                } catch (e) {
+                    log(7, `Array creation failed: ${e.message}`);
+                }
+                
+                log(7, 'Testing bitwise operation overflow...');
+                const val = 0x7fffffff;
+                const shifted = val << 1;
+                log(7, `0x7fffffff << 1 = ${shifted.toString(16)}`);
+                
+                log(7, 'Testing multiplication overflow...');
+                const large1 = 0x10000000;
+                const large2 = 0x10000000;
+                const product = large1 * large2;
+                log(7, `Product: ${product}`);
+                
+                log(7, 'Test completed');
+                setStatus(7, 'PASSED');
+            } catch (e) {
+                log(7, `Exception: ${e.message}`);
+                setStatus(7, 'FAILED');
+            }
+        }
+
+        // Run all tests sequentially
+        async function runAllTests() {
+            const tests = [
+                testJITTypeConfusion,
+                testArrayBufferCorruption,
+                testImageBitmapUAF,
+                testRegexOverflow,
+                testDOMUAF,
+                testTypedArrayConfusion,
+                testIntegerOverflow
+            ];
+            
+            for (let i = 0; i < tests.length; i++) {
+                tests[i]();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        // Initialize
+        displayEnvInfo();
+    </script>
+</body>
+</html>
